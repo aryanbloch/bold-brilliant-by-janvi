@@ -17,11 +17,11 @@ export default function About() {
             <img src="https://images.unsplash.com/photo-1753285311550-154917dab783?fm=webp&q=70&fit=crop&w=800&h=900" alt="Nail artist painting nail extensions at a nail studio in Rajkot" loading="lazy" width={800} height={900} className="aspect-[8/9] w-full rounded-[2rem] object-cover shadow-2xl shadow-primary/20" />
           </Reveal>
           <Reveal delay={0.1}>
-            <p className="pb-3 text-xs font-medium uppercase tracking-[0.3em] text-primary">Our story</p>
-            <h2 className="font-serif text-4xl font-semibold md:text-5xl">About Our Nail Art</h2>
+            <p className="pb-3 text-xs font-medium uppercase tracking-[0.3em] text-primary">About me</p>
+            <h2 className="font-serif text-4xl font-semibold md:text-5xl">About Bold & Brilliant</h2>
             <div className="space-y-4 pt-6 text-muted-foreground">
-              <p>Bold & Brilliant is Janvi Sarang's nail studio in Rajkot, where nails are treated as wearable art. Each set begins with a conversation about your style, occasion and personality.</p>
-              <p>From delicate minimal looks to intricate bridal and 3D designs, we combine creativity with meticulous technique for results that feel uniquely yours.</p>
+              <p>Bold & Brilliant by Janvi Sarang is a nail studio in Rajkot where nails become wearable art.</p>
+              <p>From minimal elegance to intricate bridal and 3D designs, every set is thoughtfully created around your style, occasion and personality.</p>
             </div>
             <p className="flex items-center gap-2 pt-6 text-sm font-medium">
               <ShieldCheck className="size-5 text-primary" /> Sterilised tools & strict hygiene for every client
