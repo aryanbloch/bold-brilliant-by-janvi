@@ -18,6 +18,7 @@ export const SITE = {
   },
   poster:
     "https://images.unsplash.com/photo-1604902396830-aca29e19b067?fm=webp&q=60&w=800",
+  delivery: "Free delivery all over India",
 } as const;
 
 export const whatsappLink = (text?: string) =>
@@ -25,6 +26,7 @@ export const whatsappLink = (text?: string) =>
 
 export const NAV = [
   { label: "Designs", href: "#portfolio" },
+  { label: "Shop", href: "#shop" },
   { label: "About", href: "#about" },
   { label: "Book", href: "#booking" },
   { label: "FAQ", href: "#faq" },
