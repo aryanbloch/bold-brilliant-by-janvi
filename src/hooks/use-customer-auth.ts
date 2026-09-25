@@ -1,4 +1,4 @@
-// Tracks the signed-in customer using Supabase email magic-link auth.
+// Tracks the signed-in customer using Supabase auth (email magic-link or Google).
 // Returns null user when Supabase isn't configured yet so the rest of the site keeps working.
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
@@ -35,6 +35,15 @@ export function useCustomerAuth() {
     if (error) throw new Error(error.message);
   };
 
+  const signInWithGoogle = async () => {
+    if (!supabase) throw new Error("Sign in isn't set up yet. Please contact the studio.");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.href },
+    });
+    if (error) throw new Error(error.message);
+  };
+
   const signOut = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
@@ -45,6 +54,7 @@ export function useCustomerAuth() {
     isSignedIn: !!session?.user,
     loading,
     signInWithEmail,
+    signInWithGoogle,
     signOut,
   };
 }
