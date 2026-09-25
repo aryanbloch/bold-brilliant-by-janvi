@@ -1,14 +1,15 @@
-// Shows the customer's own past orders, their status, and courier tracking number - no typing needed.
-// Reads directly from Supabase, which enforces via row level security that each customer only sees their own rows.
+// Shows the customer's own past orders, their status, and live courier shipment journey - no typing needed.
+// Reads orders directly from Supabase (RLS-protected), then fetches live tracking from /api/track-shipment
+// which auto-detects whether the courier is Delhivery or Shiprocket.
 import { useEffect, useState } from "react";
-import { Copy, LogIn, PackageSearch, Truck } from "lucide-react";
+import { LogIn, PackageSearch, Truck } from "lucide-react";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty.tsx";
 import { useCustomerAuth } from "@/hooks/use-customer-auth.ts";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase.ts";
-import { toast } from "sonner";
 import SignInDialog from "./sign-in-dialog.tsx";
+import ShipmentJourney from "./shipment-journey.tsx";
 
 type Order = {
   id: string;
@@ -38,15 +39,10 @@ export default function MyOrders() {
 
   if (!isSupabaseConfigured) return null;
 
-  const copyTracking = (trackingNumber: string) => {
-    void navigator.clipboard.writeText(trackingNumber);
-    toast.success("Tracking number copied");
-  };
-
   return (
     <section id="my-orders" className="px-5 py-16 md:py-24">
       <div className="mx-auto max-w-3xl">
-        <SectionHeading eyebrow="My Account" title="My Orders" sub="See your order status and courier tracking number here, automatically." />
+        <SectionHeading eyebrow="My Account" title="My Orders" sub="See your order status and live delivery journey here, automatically." />
 
         <Reveal>
           {loading ? (
@@ -97,17 +93,7 @@ export default function MyOrders() {
                       <Truck className="size-4" /> {o.status}
                     </div>
                   </div>
-                  {o.tracking_number && (
-                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border bg-background/70 px-4 py-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Courier Tracking Number</p>
-                        <p className="font-medium tracking-wide">{o.tracking_number}</p>
-                      </div>
-                      <button onClick={() => copyTracking(o.tracking_number!)} className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted">
-                        <Copy className="size-3.5" /> Copy
-                      </button>
-                    </div>
-                  )}
+                  {o.tracking_number && <ShipmentJourney trackingNumber={o.tracking_number} />}
                 </div>
               ))}
             </div>
