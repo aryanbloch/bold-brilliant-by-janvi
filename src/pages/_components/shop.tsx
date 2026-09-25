@@ -3,6 +3,7 @@ import { Sparkles, Truck } from "lucide-react";
 import { WhatsappLogo } from "@phosphor-icons/react";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
 import { whatsappLink } from "@/lib/site-config.ts";
+import CheckoutDialog from "./checkout-dialog.tsx";
 
 // Ready-to-shop press-on sets. Edit name/price/image for your real catalogue.
 const READY_SETS = [
@@ -24,11 +25,8 @@ const img = (id: string) => `https://images.unsplash.com/photo-${id}?fm=webp&q=7
 
 export default function Shop() {
   const [tab, setTab] = useState<"ready" | "custom">("ready");
+  const [checkoutProduct, setCheckoutProduct] = useState<{ name: string; price: number } | null>(null);
 
-  const orderReady = (name: string, price: number) => {
-    const text = `Hello! I'd like to order the ${name} (₹${price}). Please share available sizes and how to proceed.`;
-    window.open(whatsappLink(text), "_blank", "noopener");
-  };
   const orderCustom = (name: string) => {
     const text = `Hello! I'm interested in the ${name}. Could you help me with the design and pricing?`;
     window.open(whatsappLink(text), "_blank", "noopener");
@@ -61,8 +59,8 @@ export default function Shop() {
                   <div className="p-4">
                     <h3 className="font-serif text-lg leading-tight">{s.name}</h3>
                     <p className="pt-1 text-sm font-medium text-primary">₹{s.price}</p>
-                    <button onClick={() => orderReady(s.name, s.price)} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-4 py-2.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]">
-                      <WhatsappLogo size={16} weight="fill" /> Order Now
+                    <button onClick={() => setCheckoutProduct({ name: s.name, price: s.price })} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]">
+                      Buy Now
                     </button>
                   </div>
                 </div>
@@ -96,6 +94,8 @@ export default function Shop() {
           </div>
         </Reveal>
       </div>
+
+      {checkoutProduct && <CheckoutDialog product={checkoutProduct} onClose={() => setCheckoutProduct(null)} />}
     </section>
   );
 }
