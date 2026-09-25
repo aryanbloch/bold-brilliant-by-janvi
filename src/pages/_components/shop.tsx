@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ShoppingBag, Sparkles, Truck } from "lucide-react";
+import { Sparkles, Truck } from "lucide-react";
 import { WhatsappLogo } from "@phosphor-icons/react";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
 import { whatsappLink } from "@/lib/site-config.ts";
@@ -94,13 +94,6 @@ export default function Shop() {
             <Truck className="size-5 text-primary" />
             <p className="text-sm font-medium">Free delivery all over India on every order</p>
           </div>
-        </Reveal>
-
-        <Reveal delay={0.15}>
-          <p className="pt-6 text-center text-xs text-muted-foreground">
-            <ShoppingBag className="mr-1 inline size-3.5 -translate-y-px" />
-            Prices may vary slightly with size, length and add-on detailing. Final price is confirmed on WhatsApp before dispatch.
-          </p>
         </Reveal>
       </div>
     </section>
