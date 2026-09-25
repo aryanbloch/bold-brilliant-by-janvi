@@ -1,6 +1,6 @@
 // Checkout requires the customer to be signed in first, so every paid order can be linked
 // to their account and shown automatically in "My Orders" - no tracking number typing needed.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.tsx";
 import { Input } from "@/components/ui/input.tsx";
@@ -20,10 +20,15 @@ const FIELD = "h-11 rounded-xl bg-background/70";
 
 export default function CheckoutDialog({ product, onClose }: { product: Product; onClose: () => void }) {
   const { user, isSignedIn, loading: authLoading } = useCustomerAuth();
-  const [showSignIn, setShowSignIn] = useState(!authLoading && !isSignedIn);
+  const [showSignIn, setShowSignIn] = useState(false);
   const [details, setDetails] = useState<Details>({ name: "", phone: "", address: "" });
   const [step, setStep] = useState<"form" | "paying" | "success">("form");
   const [error, setError] = useState<string | null>(null);
+
+  // Once the auth state has finished loading, prompt sign in if the customer isn't signed in yet.
+  useEffect(() => {
+    if (!authLoading && !isSignedIn) setShowSignIn(true);
+  }, [authLoading, isSignedIn]);
 
   const update = (key: keyof Details) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setDetails((d) => ({ ...d, [key]: e.target.value }));
