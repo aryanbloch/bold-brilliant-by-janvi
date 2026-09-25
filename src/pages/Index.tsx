@@ -1,7 +1,6 @@
 import Header from "./_components/header.tsx";
 import Hero from "./_components/hero.tsx";
 import Showcase from "./_components/showcase.tsx";
-import Portfolio from "./_components/portfolio.tsx";
 import Shop from "./_components/shop.tsx";
 import About from "./_components/about.tsx";
 import Founder from "./_components/founder.tsx";
@@ -18,7 +17,6 @@ export default function Index() {
       <main>
         <Hero />
         <Showcase />
-        <Portfolio />
         <Shop />
         <About />
         <Founder />
