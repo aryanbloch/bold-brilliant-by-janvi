@@ -13,10 +13,13 @@ export default function Header() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/20 bg-black/25 px-5 py-2.5 text-white backdrop-blur-md">
-        <a href="#top" className="font-serif text-xl font-semibold leading-none">
-          {SITE.brand}
-          <span className="block text-[10px] font-sans uppercase tracking-[0.25em] text-white/70">{SITE.byline}</span>
+      <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/20 bg-black/25 px-4 py-2 text-white backdrop-blur-md">
+        <a href="#top" className="flex items-center gap-2.5">
+          <img src={SITE.logo} alt={SITE.brand} className="size-9 rounded-full object-cover ring-1 ring-white/30" />
+          <span className="font-serif text-xl font-semibold leading-none">
+            {SITE.brand}
+            <span className="block text-[10px] font-sans uppercase tracking-[0.25em] text-white/70">{SITE.byline}</span>
+          </span>
         </a>
         <ul className="hidden gap-7 text-sm md:flex">
           {NAV.map((n) => (
