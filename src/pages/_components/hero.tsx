@@ -25,7 +25,13 @@ export default function Hero() {
       {!reduce && (
         <div className="pointer-events-none absolute inset-0 hidden sm:block" aria-hidden>
           {NAILS.map((n, i) => (
-            <motion.div key={i} className="absolute [perspective:600px]" style={{ left: n.left, top: n.top }} animate={{ y: [0, -22, 0] }} transition={{ duration: n.dur, repeat: Infinity, ease: "easeInOut" }}>
+            <motion.div
+              key={i}
+              className="absolute [perspective:600px]"
+              style={{ left: n.left, top: n.top }}
+              animate={{ y: [0, -22, 0] }}
+              transition={{ duration: n.dur, repeat: Infinity, ease: "easeInOut" }}
+            >
               <motion.div
                 className={`relative rounded-t-full rounded-b-[40%] bg-gradient-to-br ${n.hue} shadow-[0_20px_40px_-10px_rgba(236,72,153,0.6)]`}
                 style={{ width: n.size, height: n.size * 1.5, rotate: n.rot }}
@@ -37,23 +43,51 @@ export default function Hero() {
             </motion.div>
           ))}
           {SPARKS.map((s, i) => (
-            <motion.span key={i} className="absolute h-1 w-1 rounded-full bg-amber-100 shadow-[0_0_8px_2px_rgba(255,230,200,0.8)]" style={{ left: s.left, top: s.top }} animate={{ opacity: [0, 1, 0], scale: [0.5, 1.4, 0.5] }} transition={{ duration: s.d, repeat: Infinity, delay: i * 0.3 }} />
+            <motion.span
+              key={i}
+              className="absolute h-1 w-1 rounded-full bg-amber-100 shadow-[0_0_8px_2px_rgba(255,230,200,0.8)]"
+              style={{ left: s.left, top: s.top }}
+              animate={{ opacity: [0, 1, 0], scale: [0.5, 1.4, 0.5] }}
+              transition={{ duration: s.d, repeat: Infinity, delay: i * 0.3 }}
+            />
           ))}
         </div>
       )}
 
-      <div className="relative z-10 mx-auto max-w-4xl px-6 pb-10 pt-28 text-center md:pb-0 md:pt-28">
-        <motion.p initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease }} className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs uppercase tracking-[0.25em] backdrop-blur-md">
+      <div className="relative z-10 mx-auto max-w-4xl px-6 pb-28 pt-28 text-center md:pb-0 md:pt-28">
+        <motion.p
+          initial={reduce ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease }}
+          className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs uppercase tracking-[0.25em] backdrop-blur-md"
+        >
           <Sparkles className="size-3.5 text-amber-200" /> Luxury Nail Studio · Rajkot
         </motion.p>
-        <motion.h1 initial={reduce ? false : { opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.15, ease }} className="pt-6 font-serif text-5xl font-semibold leading-[1.05] text-balance sm:text-6xl md:text-8xl">
+        <motion.h1
+          initial={reduce ? false : { opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.15, ease }}
+          className="pt-6 font-serif text-5xl font-semibold leading-[1.05] text-balance sm:text-6xl md:text-8xl"
+        >
           Beautiful Nails.{" "}
-          <em className="bg-gradient-to-r from-pink-200 via-amber-100 to-pink-300 bg-clip-text font-medium text-transparent">Your Signature Style.</em>
+          <em className="bg-gradient-to-r from-pink-200 via-amber-100 to-pink-300 bg-clip-text font-medium text-transparent">
+            Your Signature Style.
+          </em>
         </motion.h1>
-        <motion.p initial={reduce ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.35, ease }} className="mx-auto max-w-xl pt-6 text-base text-white/80 md:text-lg">
+        <motion.p
+          initial={reduce ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.35, ease }}
+          className="mx-auto max-w-xl pt-6 text-base text-white/80 md:text-lg"
+        >
           Rajkot's premium nail art studio for bridal nails, extensions, French tips and 3D designs, hand-crafted with precision and care by Janvi.
         </motion.p>
-        <motion.div initial={reduce ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.5, ease }} className="flex flex-col items-center justify-center gap-3 pt-8 sm:flex-row">
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.5, ease }}
+          className="flex flex-col items-center justify-center gap-3 pt-8 sm:flex-row"
+        >
           <a href="#booking" className="group inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 font-medium text-primary-foreground shadow-[0_10px_40px_-8px] shadow-primary transition-all hover:scale-105">
             Book Your Appointment <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
           </a>
