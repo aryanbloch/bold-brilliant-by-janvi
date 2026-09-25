@@ -7,7 +7,7 @@ export default function Showcase() {
   return (
     <section className="relative overflow-hidden bg-[#1f0a15] px-5 pb-16 pt-0 text-white md:pb-24 md:pt-14">
       <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-pink-600/25 blur-[80px]" />
-      <div className="relative mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-[1.35fr_1fr]">
         <Reveal>
           <div className="relative isolate -mx-5 overflow-hidden bg-black [transform:translateZ(0)] md:mx-auto md:w-full md:rounded-[3rem] md:border md:border-white/15 md:shadow-[0_30px_100px_-20px_rgba(236,72,153,0.55)]">
             <AmbientVideo lazy src={SITE.videos.showcase} className="block h-auto w-full md:rounded-[3rem]" />
