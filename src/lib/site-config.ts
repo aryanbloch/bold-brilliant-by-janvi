@@ -25,7 +25,6 @@ export const whatsappLink = (text?: string) =>
   `https://wa.me/${SITE.whatsappNumber}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
 
 export const NAV = [
-  { label: "Designs", href: "#portfolio" },
   { label: "Shop", href: "#shop" },
   { label: "About", href: "#about" },
   { label: "Book", href: "#booking" },
