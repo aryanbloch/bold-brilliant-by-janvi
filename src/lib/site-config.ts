@@ -2,6 +2,7 @@
 export const SITE = {
   brand: "Bold & Brilliant",
   byline: "by Janvi Sarang",
+  logo: "https://hercules-cdn.com/file_irYw5rC3lv2ZNOmiiLXRaAWg",
   // Replace with the real number incl. country code, digits only (e.g. "919876543210")
   whatsappNumber: "YOUR_WHATSAPP_NUMBER",
   instagramUser: "bold.brilliant.byjanvi",
