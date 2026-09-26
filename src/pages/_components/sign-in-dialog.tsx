@@ -1,6 +1,6 @@
-// Sign in with Google (one tap) or email magic-link. New customers complete their profile right after.
+// Sign in with Google (one tap) or email OTP: enter email, receive a 6-digit code, enter it here.
 import { useState } from "react";
-import { Loader2, Mail, MailCheck } from "lucide-react";
+import { Loader2, Mail, ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
@@ -18,24 +18,40 @@ function GoogleIcon() {
 }
 
 export default function SignInDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { signInWithEmail, signInWithGoogle } = useCustomerAuth();
+  const { sendEmailOtp, verifyEmailOtp, signInWithGoogle } = useCustomerAuth();
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const submit = async (e: React.FormEvent) => {
+  const sendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSending(true);
     try {
-      await signInWithEmail(email.trim());
-      setSent(true);
+      await sendEmailOtp(email.trim());
+      setCodeSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send sign-in link. Please try again.");
+      setError(err instanceof Error ? err.message : "Could not send the code. Please try again.");
     } finally {
       setSending(false);
+    }
+  };
+
+  const submitCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setVerifying(true);
+    try {
+      await verifyEmailOtp(email.trim(), code.trim());
+      // Dialog closes automatically once isSignedIn flips to true (see checkout-dialog usage).
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That code didn't work. Please check it and try again.");
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -54,8 +70,9 @@ export default function SignInDialog({ open, onClose }: { open: boolean; onClose
   const handleClose = (isOpen: boolean) => {
     if (!isOpen) {
       onClose();
-      setSent(false);
+      setCodeSent(false);
       setEmail("");
+      setCode("");
       setError(null);
     }
   };
@@ -63,14 +80,47 @@ export default function SignInDialog({ open, onClose }: { open: boolean; onClose
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-sm">
-        {sent ? (
-          <div className="flex flex-col items-center gap-3 py-4 text-center">
-            <MailCheck className="size-14 text-primary" />
-            <DialogTitle className="font-serif text-2xl">Check Your Email</DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              We've sent a sign-in link to {email}. Open it to sign in - no password needed.
-            </p>
-          </div>
+        {codeSent ? (
+          <>
+            <DialogTitle className="font-serif text-2xl">Enter The Code</DialogTitle>
+            <p className="text-sm text-muted-foreground">We've sent a 6-digit code to {email}. Enter it below to sign in.</p>
+            <form onSubmit={submitCode} className="grid gap-4 pt-2">
+              <div>
+                <Label htmlFor="signin-code" className="pb-2">Verification Code</Label>
+                <Input
+                  id="signin-code"
+                  inputMode="numeric"
+                  autoFocus
+                  maxLength={6}
+                  required
+                  placeholder="123456"
+                  className="h-11 rounded-xl bg-background/70 text-center text-lg tracking-[0.4em]"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <button
+                type="submit"
+                disabled={verifying || code.trim().length < 6}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary font-medium text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
+              >
+                {verifying ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
+                Verify & Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCodeSent(false);
+                  setCode("");
+                  setError(null);
+                }}
+                className="text-center text-sm text-muted-foreground hover:text-primary"
+              >
+                Use a different email
+              </button>
+            </form>
+          </>
         ) : (
           <>
             <DialogTitle className="font-serif text-2xl">Sign In</DialogTitle>
@@ -90,7 +140,7 @@ export default function SignInDialog({ open, onClose }: { open: boolean; onClose
                 <span className="h-px flex-1 bg-border" /> OR <span className="h-px flex-1 bg-border" />
               </div>
 
-              <form onSubmit={submit} className="grid gap-4">
+              <form onSubmit={sendCode} className="grid gap-4">
                 <div>
                   <Label htmlFor="signin-email" className="pb-2">Email Address</Label>
                   <Input id="signin-email" type="email" required placeholder="you@example.com" className="h-11 rounded-xl bg-background/70" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -102,7 +152,7 @@ export default function SignInDialog({ open, onClose }: { open: boolean; onClose
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary font-medium text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
                 >
                   {sending ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
-                  Send Sign-In Link
+                  Send Code
                 </button>
               </form>
             </div>
