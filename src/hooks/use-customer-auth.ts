@@ -1,4 +1,4 @@
-// Tracks the signed-in customer using Supabase auth (email OTP code or Google).
+// Tracks the signed-in customer using Supabase auth (password, email OTP, or Google).
 // Returns null user when Supabase isn't configured yet so the rest of the site keeps working.
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
@@ -26,7 +26,15 @@ export function useCustomerAuth() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Sends a 6-digit one-time code to the customer's email.
+  // Signs in directly with an email + password that was already set (see setPassword below).
+  const signInWithPassword = async (email: string, password: string) => {
+    if (!supabase) throw new Error("Sign in isn't set up yet. Please contact the studio.");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
+  };
+
+  // Sends a 6-digit one-time code to the customer's email. Used both for first-time
+  // verification (new account) and for "forgot password" (reset via OTP, see setPassword).
   const sendEmailOtp = async (email: string) => {
     if (!supabase) throw new Error("Sign in isn't set up yet. Please contact the studio.");
     const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
@@ -37,6 +45,14 @@ export function useCustomerAuth() {
   const verifyEmailOtp = async (email: string, token: string) => {
     if (!supabase) throw new Error("Sign in isn't set up yet. Please contact the studio.");
     const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    if (error) throw new Error(error.message);
+  };
+
+  // Sets/replaces the password on the now-signed-in account (right after OTP verification).
+  // This is what lets the customer sign in with just email + password next time.
+  const setPassword = async (password: string) => {
+    if (!supabase) throw new Error("Sign in isn't set up yet. Please contact the studio.");
+    const { error } = await supabase.auth.updateUser({ password });
     if (error) throw new Error(error.message);
   };
 
@@ -58,8 +74,10 @@ export function useCustomerAuth() {
     user: session?.user ?? null,
     isSignedIn: !!session?.user,
     loading,
+    signInWithPassword,
     sendEmailOtp,
     verifyEmailOtp,
+    setPassword,
     signInWithGoogle,
     signOut,
   };
