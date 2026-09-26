@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu, ShoppingBasket, User, X } from "lucide-react";
 import { NAV, SITE } from "@/lib/site-config.ts";
 import { cn } from "@/lib/utils.ts";
@@ -14,9 +14,22 @@ export default function Header() {
   const { count } = useCart();
   const { profile, isSignedIn, openProfile } = useProfile();
   const initial = isSignedIn && profile ? profile.fullName.charAt(0).toUpperCase() : null;
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close the mobile menu when the visitor taps/clicks anywhere outside it.
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [open]);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3">
+    <header ref={menuRef} className="fixed inset-x-0 top-0 z-40 px-3 pt-3">
       <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/20 bg-black/25 px-4 py-2 text-white backdrop-blur-md">
         <a href="#top" className="flex items-center gap-2.5">
           <img src={SITE.logo} alt={SITE.brand} className="size-9 rounded-full object-cover ring-1 ring-white/30" />
