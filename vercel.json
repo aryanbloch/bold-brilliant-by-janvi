@@ -5,6 +5,9 @@
   "rewrites": [
     { "source": "/admin", "destination": "/index.html" },
     { "source": "/admin/(.*)", "destination": "/index.html" },
-    { "source": "/shop", "destination": "/index.html" }
+    { "source": "/shop", "destination": "/index.html" },
+    { "source": "/book", "destination": "/index.html" },
+    { "source": "/orders", "destination": "/index.html" },
+    { "source": "/profile", "destination": "/index.html" }
   ]
 }
