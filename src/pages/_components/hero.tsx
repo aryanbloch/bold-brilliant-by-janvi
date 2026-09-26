@@ -95,7 +95,7 @@ export default function Hero() {
           <a href="#booking" className="group inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 font-medium text-primary-foreground shadow-[0_10px_40px_-8px] shadow-primary transition-all hover:scale-105">
             Book Your Appointment <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
           </a>
-          <a href="#shop" className="rounded-full border border-primary/25 bg-white/80 px-8 py-4 font-medium text-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-white">
+          <a href="/shop" className="rounded-full border border-primary/25 bg-white/80 px-8 py-4 font-medium text-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-white">
             Shop Nail Sets
           </a>
         </motion.div>
