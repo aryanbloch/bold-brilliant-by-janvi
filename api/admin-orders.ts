@@ -7,7 +7,8 @@
 //   GET    /api/admin-orders?stats=1                -> dashboard numbers
 //   GET    /api/admin-orders?export=csv             -> CSV file download
 //   PATCH  /api/admin-orders   body: { id, status?, trackingNumber?, courier?, adminNote? }
-import { checkAdminPassword, dbFetch, getEnv, passwordMismatchHint, q, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
+// Note: import uses ".js" - Vercel compiles each .ts file to .js, so a ".ts" import crashes at runtime.
+import { checkAdminPassword, dbFetch, getEnv, passwordMismatchHint, q, type ApiRequest, type ApiResponse } from "./_lib/db.js";
 
 type Order = {
   id: string;
