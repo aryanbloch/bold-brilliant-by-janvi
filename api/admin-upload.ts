@@ -2,7 +2,7 @@
 // bucket and returns its public URL, for product photos, banner images, gallery photos etc.
 // Protected by the shared admin password. Env vars: ADMIN_PASSWORD, SUPABASE_SERVICE_ROLE_KEY,
 // SUPABASE_URL.
-import { checkAdminPassword, getEnv, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
+import { checkAdminPassword, getEnv, type ApiRequest, type ApiResponse } from "./_lib/db.js";
 
 const MIME_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
