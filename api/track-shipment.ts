@@ -4,11 +4,22 @@
 // Called from the browser (My Orders / admin) with ?orderId=... - no tokens needed since it
 // only ever reads the order's own stored tracking number and courier.
 // Env vars (Vercel): DELHIVERY_API_TOKEN, SHIPROCKET_EMAIL, SHIPROCKET_PASSWORD,
-// SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL (falls back to VITE_SUPABASE_URL).
+// SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL (falls back to VITE_SUPABASE_URL), RESEND_API_KEY (optional).
 import { dbFetch, getEnv, q, type ApiRequest, type ApiResponse } from "./_lib/db.js";
+import { getUserEmail, orderVars, sendTemplateEmail } from "./_lib/email.js";
 
 type TrackingEvent = { status: string; location: string; date: string };
 type TrackingResult = { courier: string; currentStatus: string; currentLocation: string; events: TrackingEvent[]; delivered: boolean };
+type OrderRow = {
+  user_id: string;
+  tracking_number: string | null;
+  status: string;
+  customer_name: string;
+  phone: string;
+  product_name: string;
+  amount: number;
+  courier: string | null;
+};
 
 // In-memory cache for the Shiprocket auth token (short lived per serverless instance - fine
 // since it just saves an extra login call on warm invocations, and re-logs in on cold ones).
@@ -94,12 +105,17 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const env = getEnv();
   let trackingNumber = directTrackingNumber ?? null;
+  let order: OrderRow | null = null;
 
   try {
     if (orderId && env) {
-      const r = await dbFetch(env.supabaseUrl, env.serviceKey, `orders?id=eq.${encodeURIComponent(orderId)}&select=tracking_number,status`);
-      const rows = (await r.json()) as { tracking_number: string | null; status: string }[];
-      trackingNumber = rows[0]?.tracking_number ?? null;
+      const r = await dbFetch(
+        env.supabaseUrl,
+        env.serviceKey,
+        `orders?id=eq.${encodeURIComponent(orderId)}&select=user_id,tracking_number,status,customer_name,phone,product_name,amount,courier`,
+      );
+      order = ((await r.json()) as OrderRow[])[0] ?? null;
+      trackingNumber = order?.tracking_number ?? null;
     }
     if (!trackingNumber) {
       res.status(404).json({ error: "This order has not been dispatched yet." });
@@ -120,7 +136,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         last_tracking_location: result.currentLocation,
         last_tracking_sync_at: nowIso,
       };
-      if (result.delivered) {
+      // Only the transition into Delivered (not already Delivered/Cancelled) should notify -
+      // avoids re-sending the email on every subsequent tracking poll.
+      const newlyDelivered = result.delivered && order?.status !== "Delivered" && order?.status !== "Cancelled";
+      if (newlyDelivered) {
         patch.status = "Delivered";
         patch.delivered_at = nowIso;
       }
@@ -137,6 +156,19 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
           body: JSON.stringify({ order_id: orderId, status: e.status, location: e.location, event_time: e.date, source: "courier" }),
         });
+      }
+
+      // Same "Order delivered" email admin-orders.ts sends when an admin manually marks an
+      // order Delivered - customers who are only auto-delivered via courier tracking used to
+      // never get this email.
+      if (newlyDelivered && order) {
+        const to = await getUserEmail(env, order.user_id);
+        await sendTemplateEmail(
+          env,
+          "order_delivered",
+          to,
+          orderVars({ id: orderId, customer_name: order.customer_name, phone: order.phone, product_name: order.product_name, amount: order.amount, courier: order.courier }),
+        );
       }
     }
 
