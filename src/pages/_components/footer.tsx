@@ -1,12 +1,14 @@
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog.tsx";
 import SocialButtons from "@/components/social-buttons.tsx";
-import { NAV, SITE } from "@/lib/site-config.ts";
+import { NAV } from "@/lib/site-config.ts";
+import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
+import { useSiteContent } from "@/hooks/use-site-content.ts";
 
 // My Orders stays in the header menu only.
 const FOOTER_NAV = NAV.filter((n) => n.href !== "#my-orders");
 
-const POLICIES = [
-  {
+const DEFAULT_POLICIES: Record<string, { title: string; points: string[] }> = {
+  privacy_policy: {
     title: "Privacy Policy",
     points: [
       "We only collect the details needed to deliver your order: your name, phone number, delivery address and the email you sign in with.",
@@ -18,10 +20,9 @@ const POLICIES = [
       "Your basket is saved only in your own browser and is not sent to us until you check out.",
       "Clicking WhatsApp, Instagram or Google Maps takes you to those services, which have their own privacy policies.",
       "Want your account or order details deleted? Message us on WhatsApp and we will remove them.",
-      `For any privacy question, message us on WhatsApp or visit us at ${SITE.address}.`,
     ],
   },
-  {
+  shipping_policy: {
     title: "Shipping Policy",
     points: [
       "We offer free delivery all over India on every ready-to-shop and custom nail set order.",
@@ -31,7 +32,7 @@ const POLICIES = [
       "Delivery timelines may vary slightly for remote locations.",
     ],
   },
-  {
+  refund_policy: {
     title: "Cancellation & Refund Policy",
     points: [
       "Ready-to-shop sets: you may cancel your order for a full refund any time before it is dispatched. Once shipped, the order cannot be cancelled.",
@@ -43,7 +44,7 @@ const POLICIES = [
       "For any cancellation or refund request, please contact us on WhatsApp with your order details.",
     ],
   },
-  {
+  terms: {
     title: "Terms",
     points: [
       "Appointments are confirmed only after we reply to your WhatsApp booking request.",
@@ -55,17 +56,37 @@ const POLICIES = [
       "Please tell us about any allergies or skin or nail conditions before your service.",
     ],
   },
-];
+};
+
+function PolicyContent({ policyKey }: { policyKey: string }) {
+  const content = useSiteContent();
+  const entry = content?.[policyKey];
+  const fallback = DEFAULT_POLICIES[policyKey];
+
+  // Prefer the admin-edited text when it has real content, otherwise show the built-in default.
+  if (entry?.body.trim()) {
+    return <div className="whitespace-pre-line text-sm text-muted-foreground">{entry.body}</div>;
+  }
+  return (
+    <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+      {fallback.points.map((t) => (
+        <li key={t}>{t}</li>
+      ))}
+    </ul>
+  );
+}
 
 export default function Footer() {
+  const settings = useSiteSettings();
+
   return (
     <footer className="border-t bg-secondary/40 px-5 pb-6 pt-12">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
-          <img src={SITE.logo} alt={SITE.brand} className="mt-2 size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
+          <img src={settings.logoUrl} alt={settings.brand} className="mt-2 size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
           <div>
-            <p className="font-serif text-2xl font-semibold leading-tight">{SITE.brand}</p>
-            <p className="text-sm leading-snug text-muted-foreground">{SITE.byline} · Nail Art Studio, Rajkot, Gujarat 360001</p>
+            <p className="font-serif text-2xl font-semibold leading-tight">{settings.brand}</p>
+            <p className="text-sm leading-snug text-muted-foreground">{settings.byline} · Nail Art Studio, Rajkot, Gujarat 360001</p>
             <SocialButtons className="pt-4" />
           </div>
         </div>
@@ -78,16 +99,14 @@ export default function Footer() {
         </nav>
       </div>
       <div className="mx-auto mt-8 flex max-w-6xl flex-col items-center gap-3 border-t pt-8 text-center text-xs text-muted-foreground">
-        <p>© {new Date().getFullYear()} {SITE.brand} {SITE.byline}. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} {settings.brand} {settings.byline}. All rights reserved.</p>
         <div className="flex flex-wrap justify-center gap-6">
-          {POLICIES.map((p) => (
-            <Dialog key={p.title}>
+          {Object.entries(DEFAULT_POLICIES).map(([key, p]) => (
+            <Dialog key={key}>
               <DialogTrigger className="cursor-pointer hover:text-primary">{p.title}</DialogTrigger>
               <DialogContent className="max-h-[85vh] overflow-y-auto">
                 <DialogTitle className="font-serif text-2xl">{p.title}</DialogTitle>
-                <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                  {p.points.map((t) => <li key={t}>{t}</li>)}
-                </ul>
+                <PolicyContent policyKey={key} />
               </DialogContent>
             </Dialog>
           ))}
