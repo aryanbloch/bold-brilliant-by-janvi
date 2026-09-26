@@ -107,7 +107,7 @@ function ProfileBody({ required, startInEdit, profile, email, onClose, onSave, o
         <button onClick={() => setEditing(true)} className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]">
           <Pencil className="size-4" /> Edit Details
         </button>
-        <a href="#my-orders" onClick={onClose} className="inline-flex h-11 items-center justify-center gap-2 rounded-full border bg-secondary text-sm font-medium transition-colors hover:bg-secondary/70">
+        <a href="/orders" onClick={onClose} className="inline-flex h-11 items-center justify-center gap-2 rounded-full border bg-secondary text-sm font-medium transition-colors hover:bg-secondary/70">
           <Package className="size-4" /> My Orders
         </a>
       </div>
