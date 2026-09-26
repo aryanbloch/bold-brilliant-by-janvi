@@ -1,16 +1,19 @@
 // Single admin endpoint for every simple content table: Shop products, Coupons, Coupon
 // banners, Reviews, Bookings, Site settings (contacts/hours/social toggles/booking message),
-// Site content (policy pages) and the Invoice template. Protected by the shared admin password.
-// Env vars (Vercel): ADMIN_PASSWORD, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL.
+// Site content (policy pages), the Invoice template and Email templates.
+// Protected by the shared admin password. Env vars (Vercel): ADMIN_PASSWORD,
+// SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL, RESEND_API_KEY (for booking emails).
 //
 // Usage from the admin panel:
 //   GET    /api/admin?resource=products                 -> list all rows
 //   POST   /api/admin?resource=products                  body: fields to insert
 //   PATCH  /api/admin?resource=products                  body: { id, ...fields to update }
 //   DELETE /api/admin?resource=products&id=<uuid>
+//   POST   /api/admin?resource=bookings&action=email     body: { id } -> emails the customer
 // Singleton resources (site_settings, invoice_template) ignore id and always target row 1.
-// site_content is keyed by `key` instead of `id` (PATCH body: { key, ...fields }).
+// site_content and email_templates are keyed by `key` instead of `id`.
 import { checkAdminPassword, dbFetch, getEnv, q, rejectWrongPassword, type ApiRequest, type ApiResponse } from "./_lib/db.js";
+import { bookingVars, sendTemplateEmail } from "./_lib/email.js";
 
 type Resource = {
   table: string;
@@ -80,7 +83,47 @@ const RESOURCES: Record<string, Resource> = {
     writable: ["html", "prefix"],
     singleton: true,
   },
+  email_templates: {
+    table: "email_templates",
+    order: "sort_order.asc",
+    keyColumn: "key",
+    writable: ["subject", "html", "enabled"],
+  },
 };
+
+type BookingRow = {
+  id: string; booking_number: number; name: string; phone: string; email: string | null;
+  service: string; preferred_date: string; preferred_time: string; message: string | null; status: string;
+};
+
+async function emailBooking(env: { supabaseUrl: string; serviceKey: string }, id: string, res: ApiResponse) {
+  if (!process.env.RESEND_API_KEY) {
+    res.status(400).json({ error: "Email is not set up yet. Add RESEND_API_KEY in Vercel." });
+    return;
+  }
+  const r = await dbFetch(env.supabaseUrl, env.serviceKey, `bookings?id=eq.${encodeURIComponent(id)}&select=*`);
+  const booking = ((await r.json()) as BookingRow[])[0];
+  if (!booking) {
+    res.status(404).json({ error: "Booking not found." });
+    return;
+  }
+  if (!booking.email) {
+    res.status(400).json({ error: "This customer did not give an email." });
+    return;
+  }
+  const key = booking.status === "Cancelled" ? "booking_cancelled" : booking.status === "Confirmed" ? "booking_confirmed" : null;
+  if (!key) {
+    res.status(400).json({ error: "Accept or decline the booking first." });
+    return;
+  }
+  const tplRes = await dbFetch(env.supabaseUrl, env.serviceKey, `email_templates?key=eq.${key}&select=enabled`);
+  if (!((await tplRes.json()) as { enabled: boolean }[])[0]?.enabled) {
+    res.status(400).json({ error: "This email is switched off in Admin > Emails." });
+    return;
+  }
+  await sendTemplateEmail(env, key, booking.email, bookingVars(booking));
+  res.status(200).json({ ok: true });
+}
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   const resourceName = q(req, "resource");
@@ -102,6 +145,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const { supabaseUrl, serviceKey } = env;
 
   try {
+    if (req.method === "POST" && resourceName === "bookings" && q(req, "action") === "email") {
+      const id = (req.body as { id?: unknown } | undefined)?.id;
+      if (typeof id !== "string" || !id) {
+        res.status(400).json({ error: "Missing id" });
+        return;
+      }
+      await emailBooking(env, id, res);
+      return;
+    }
+
     if (req.method === "GET") {
       const path = resource.singleton
         ? `${resource.table}?id=eq.1&select=*`

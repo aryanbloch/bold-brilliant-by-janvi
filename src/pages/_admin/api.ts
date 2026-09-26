@@ -1,6 +1,5 @@
 // Shared fetch helpers for every admin tab. All requests go through the admin endpoints and
-// carry the studio owner's password in the x-admin-password header (never sent from anywhere
-// else in the app).
+// carry the studio owner's password in the x-admin-password header (never in a URL).
 const STORAGE_KEY = "bb-admin-password";
 
 export function getStoredPassword(): string | null {
@@ -31,7 +30,8 @@ export type Resource =
   | "bookings"
   | "site_settings"
   | "site_content"
-  | "invoice_template";
+  | "invoice_template"
+  | "email_templates";
 
 export const adminApi = {
   list: <T>(password: string, resource: Resource) => request<{ rows?: T[]; row?: T; error?: string }>(password, `/api/admin?resource=${resource}`),
@@ -43,7 +43,20 @@ export const adminApi = {
     request<{ ok?: boolean; error?: string }>(password, `/api/admin?resource=${resource}&id=${encodeURIComponent(id)}`, { method: "DELETE" }),
   upload: (password: string, dataUrl: string, folder: string) =>
     request<{ url?: string; error?: string }>(password, "/api/admin-upload", { method: "POST", body: JSON.stringify({ dataUrl, folder }) }),
+  emailBooking: (password: string, id: string) =>
+    request<{ ok?: boolean; error?: string }>(password, "/api/admin?resource=bookings&action=email", { method: "POST", body: JSON.stringify({ id }) }),
 };
+
+// Opens an invoice in a new tab. The password travels in a header (never in the URL/history).
+export async function openAdminInvoice(password: string, orderId: string): Promise<string | null> {
+  const tab = window.open("", "_blank");
+  const res = await fetch(`/api/invoice?orderId=${encodeURIComponent(orderId)}&print=1`, { headers: { "x-admin-password": password } });
+  const html = await res.text();
+  if (!tab) return "Please allow pop-ups to view the invoice.";
+  tab.document.write(html);
+  tab.document.close();
+  return res.ok ? null : "Invoice not available yet.";
+}
 
 const MAX_DIMENSION = 1800; // px, plenty for product and banner photos
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
