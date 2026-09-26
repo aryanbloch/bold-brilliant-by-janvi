@@ -2,13 +2,17 @@ import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
 import "./index.css";
 import Index from "./pages/Index.tsx";
+import ShopPage from "./pages/Shop.tsx";
 import AdminPage from "./pages/admin.tsx";
 import { CartProvider } from "./hooks/use-cart.tsx";
 import { SiteSettingsProvider } from "./hooks/use-site-settings.tsx";
 import ProfileProvider from "./components/profile/profile-provider.tsx";
 
 // /admin shows a separate password-gated dashboard for the studio owner - see src/pages/admin.tsx.
-const isAdmin = window.location.pathname.startsWith("/admin");
+// /shop shows the shop as its own standalone page (no home page sections) - see src/pages/Shop.tsx.
+const path = window.location.pathname;
+const isAdmin = path.startsWith("/admin");
+const isShop = path.startsWith("/shop");
 
 // Browsers sometimes restore the previous scroll position on reload (or when returning from the
 // back-forward cache), dropping visitors into the middle of the page instead of the top. Force
@@ -38,9 +42,7 @@ createRoot(document.getElementById("root")!).render(
   ) : (
     <SiteSettingsProvider>
       <CartProvider>
-        <ProfileProvider>
-          <Index />
-        </ProfileProvider>
+        <ProfileProvider>{isShop ? <ShopPage /> : <Index />}</ProfileProvider>
         <Toaster position="top-center" richColors />
       </CartProvider>
     </SiteSettingsProvider>
