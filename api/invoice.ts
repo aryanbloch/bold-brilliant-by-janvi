@@ -1,11 +1,13 @@
 // Renders one invoice as a self-contained, print-ready HTML page by filling the admin-editable
-// template (invoice_template.html) with the order's real data. The frontend fetches this HTML
-// (with the customer's Supabase token, or the admin password) and prints it to PDF using the
+// template (invoice_template.html) with the order's real data. The frontend opens this URL
+// (with the customer's Supabase access token, or the admin password, as a query param - since
+// a plain link/new-tab request can't send custom headers) and prints it to PDF using the
 // browser's own "Save as PDF" - the same approach Amazon/Flipkart invoices use, so no extra
 // PDF-rendering service or paid dependency is needed.
-// Access: the signed-in customer who owns the order, OR the admin (x-admin-password header).
+// Access: the signed-in customer who owns the order (?token=<access_token>), OR the admin
+// (?adminPassword=... or the x-admin-password header).
 // Env vars (Vercel): SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL.
-import { checkAdminPassword, dbFetch, escapeHtml, getEnv, getUserId, q, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
+import { checkAdminPassword, dbFetch, escapeHtml, getEnv, q, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
 
 type InvoiceRow = { id: string; order_id: string; user_id: string; invoice_number: string; created_at: string };
 type OrderRow = {
@@ -23,6 +25,14 @@ type OrderRow = {
 };
 type SiteSettings = { brand: string; address: string | null; gstin: string | null };
 type Template = { html: string };
+
+async function getUserIdFromToken(token: string | undefined, supabaseUrl: string, serviceKey: string): Promise<string | null> {
+  if (!token) return null;
+  const res = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: serviceKey, Authorization: `Bearer ${token}` } });
+  if (!res.ok) return null;
+  const user = (await res.json()) as { id?: string };
+  return user.id ?? null;
+}
 
 function itemsRowsHtml(order: OrderRow): string {
   const items = order.items?.length ? order.items : [{ name: order.product_name, qty: 1, price: order.subtotal ?? order.amount }];
@@ -57,6 +67,11 @@ function fillTemplate(template: string, order: OrderRow, invoice: InvoiceRow, se
   return template.replace(/\{\{(\w+)\}\}/g, (match, key: string) => replacements[key] ?? match);
 }
 
+function sendError(res: ApiResponse, status: number, message: string) {
+  res.status(status).setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(`<!DOCTYPE html><html><body style="font-family:sans-serif;padding:40px;text-align:center;color:#555"><p>${escapeHtml(message)}</p></body></html>`);
+}
+
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== "GET") {
     res.status(405).json({ error: "Method not allowed" });
@@ -64,18 +79,18 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
   const env = getEnv();
   if (!env) {
-    res.status(500).json({ error: "Invoices are not set up yet." });
+    sendError(res, 500, "Invoices are not set up yet.");
     return;
   }
   const { supabaseUrl, serviceKey } = env;
   const orderId = q(req, "orderId");
   const invoiceId = q(req, "invoiceId");
   if (!orderId && !invoiceId) {
-    res.status(400).json({ error: "Missing orderId or invoiceId" });
+    sendError(res, 400, "Missing invoice reference.");
     return;
   }
 
-  const isAdmin = checkAdminPassword(req);
+  const isAdmin = checkAdminPassword(req) || (process.env.ADMIN_PASSWORD && q(req, "adminPassword") === process.env.ADMIN_PASSWORD);
 
   try {
     const filter = invoiceId ? `id=eq.${encodeURIComponent(invoiceId)}` : `order_id=eq.${encodeURIComponent(orderId ?? "")}`;
@@ -83,14 +98,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const invoices = (await invRes.json()) as InvoiceRow[];
     const invoice = invoices[0];
     if (!invoice) {
-      res.status(404).json({ error: "Invoice not found." });
+      sendError(res, 404, "Invoice not found.");
       return;
     }
 
     if (!isAdmin) {
-      const userId = await getUserId(req, supabaseUrl, serviceKey);
+      const userId = await getUserIdFromToken(q(req, "token"), supabaseUrl, serviceKey);
       if (!userId || userId !== invoice.user_id) {
-        res.status(403).json({ error: "You do not have access to this invoice." });
+        sendError(res, 403, "You do not have access to this invoice.");
         return;
       }
     }
@@ -103,7 +118,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const orders = (await orderRes.json()) as OrderRow[];
     const order = orders[0];
     if (!order) {
-      res.status(404).json({ error: "Order not found." });
+      sendError(res, 404, "Order not found.");
       return;
     }
     const templates = (await templateRes.json()) as Template[];
@@ -124,12 +139,13 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 </head>
 <body>
 ${filled}
+<script>window.onload = () => { if (new URLSearchParams(location.search).get("print") === "1") window.print(); };</script>
 </body>
 </html>`;
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(page);
   } catch {
-    res.status(500).json({ error: "Could not generate the invoice. Please try again." });
+    sendError(res, 500, "Could not generate the invoice. Please try again.");
   }
 }
