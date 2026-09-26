@@ -54,11 +54,11 @@ export default function Shop() {
         </Reveal>
 
         {tab === "ready" ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6">
+          <div className="mx-auto grid max-w-md grid-cols-1 gap-6">
             {READY_SETS.map((s, i) => (
               <Reveal key={s.name} delay={i * 0.06}>
                 <div className="group relative overflow-hidden rounded-3xl border bg-card/70 backdrop-blur transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-primary/10">
-                  <div className="relative aspect-[4/5] overflow-hidden bg-muted">
+                  <div className="relative aspect-square overflow-hidden bg-muted">
                     <img src={setImage(s.img)} alt={`${s.name} press-on nail set`} loading="lazy" className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 ${s.soldOut ? "opacity-50" : ""}`} />
                     {s.soldOut && (
                       <span className="absolute left-3 top-3 rounded-full bg-foreground px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-background">

@@ -1,5 +1,6 @@
 import { Brush, Gem, HeartHandshake, ScanEye, ShieldCheck } from "lucide-react";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
+import { SITE } from "@/lib/site-config.ts";
 
 const CARDS = [
   { icon: Brush, title: "Creative Designs", text: "Original artwork, trend-led and hand-painted." },
@@ -14,7 +15,9 @@ export default function About() {
       <div className="mx-auto max-w-6xl">
         <div className="grid items-center gap-12 pb-14 md:grid-cols-2">
           <Reveal>
-            <img src="https://images.unsplash.com/photo-1753285311550-154917dab783?fm=webp&q=70&fit=crop&w=800&h=900" alt="Nail artist painting nail extensions at a nail studio in Rajkot" loading="lazy" width={800} height={900} className="aspect-[8/9] w-full rounded-[2rem] object-cover shadow-2xl shadow-primary/20" />
+            <div className="grid aspect-[8/9] w-full place-items-center rounded-[2rem] bg-gradient-to-br from-primary/15 via-secondary to-primary/10 shadow-2xl shadow-primary/20">
+              <img src={SITE.logo} alt={SITE.brand} loading="lazy" className="size-40 rounded-full object-cover ring-4 ring-white/60 sm:size-56" />
+            </div>
           </Reveal>
           <Reveal delay={0.1}>
             <p className="pb-3 text-xs font-medium uppercase tracking-[0.3em] text-primary">About me</p>

@@ -21,8 +21,8 @@ export default function Index() {
         <Hero />
         <Showcase />
         <Gallery />
-        <Shop />
         <About />
+        <Shop />
         <Founder />
         <Testimonials />
         <Booking />
