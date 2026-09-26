@@ -3,10 +3,13 @@ import { ShoppingBasket, Sparkles, Truck } from "lucide-react";
 import { WhatsappLogo } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
-import { whatsappLink } from "@/lib/site-config.ts";
-import { READY_SETS, setImage, type CheckoutOrder } from "@/lib/catalog.ts";
+import { useSiteSettings, whatsappLinkFor } from "@/hooks/use-site-settings.tsx";
+import { useProducts, type Product } from "@/hooks/use-products.ts";
 import { useCart } from "@/hooks/use-cart.tsx";
+import type { CheckoutOrder } from "@/lib/catalog.ts";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
 import CheckoutDialog from "./checkout-dialog.tsx";
+import PromoBanner from "./promo-banner.tsx";
 
 const CUSTOM_SETS = [
   { name: "Custom Everyday Set", price: "Starts at ₹699", desc: "Your choice of shape, length and 1-2 colours." },
@@ -14,33 +17,37 @@ const CUSTOM_SETS = [
   { name: "Custom Bridal Set", price: "Starts at ₹1,999", desc: "Fully personalised bridal design with trial option." },
 ];
 
-type ReadySet = (typeof READY_SETS)[number];
+const FALLBACK_IMG = "https://images.unsplash.com/photo-1610992015762-45dca7fa3a85?fm=webp&q=70&fit=crop&w=500&h=625";
 
 export default function Shop() {
   const [tab, setTab] = useState<"ready" | "custom">("ready");
   const [checkout, setCheckout] = useState<CheckoutOrder | null>(null);
   const { add } = useCart();
+  const products = useProducts();
+  const settings = useSiteSettings();
 
   const orderCustom = (name: string) => {
     const text = `Hello! I'm interested in the ${name}. Could you help me with the design and pricing?`;
-    window.open(whatsappLink(text), "_blank", "noopener");
+    window.open(whatsappLinkFor(settings.whatsappNumber, text), "_blank", "noopener");
   };
 
-  const addToBasket = (s: ReadySet) => {
-    if (s.soldOut) return;
-    add({ name: s.name, price: s.price, img: setImage(s.img) });
-    toast.success(`${s.name} added to your basket`);
+  const addToBasket = (p: Product) => {
+    if (p.soldOut) return;
+    add({ name: p.name, price: p.price, img: p.imageUrl ?? FALLBACK_IMG });
+    toast.success(`${p.name} added to your basket`);
   };
 
-  const buyNow = (s: ReadySet) => {
-    if (s.soldOut) return;
-    setCheckout({ items: [{ name: s.name, qty: 1 }], title: s.name, total: s.price });
+  const buyNow = (p: Product) => {
+    if (p.soldOut) return;
+    setCheckout({ items: [{ name: p.name, qty: 1, price: p.price, img: p.imageUrl ?? FALLBACK_IMG }], title: p.name, total: p.price });
   };
 
   return (
     <section id="shop" className="px-5 py-16 md:py-24">
       <div className="mx-auto max-w-6xl">
         <SectionHeading eyebrow="Shop" title="Ready-to-Shop & Custom Nail Sets" sub="Reusable press-on nail sets, hand-painted in our Rajkot studio and shipped to your door." />
+
+        <PromoBanner placement="shop" className="mx-auto mb-8 max-w-xl" />
 
         <Reveal>
           <div className="mx-auto mb-10 flex w-fit items-center gap-2 rounded-full border bg-card p-1.5">
@@ -54,44 +61,59 @@ export default function Shop() {
         </Reveal>
 
         {tab === "ready" ? (
-          <div className="mx-auto grid max-w-md grid-cols-1 gap-6">
-            {READY_SETS.map((s, i) => (
-              <Reveal key={s.name} delay={i * 0.06}>
-                <div className="group relative overflow-hidden rounded-3xl border bg-card/70 backdrop-blur transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-primary/10">
-                  <div className="relative aspect-square overflow-hidden bg-muted">
-                    <img src={setImage(s.img)} alt={`${s.name} press-on nail set`} loading="lazy" className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 ${s.soldOut ? "opacity-50" : ""}`} />
-                    {s.soldOut && (
-                      <span className="absolute left-3 top-3 rounded-full bg-foreground px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-background">
-                        Sold Out
-                      </span>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-serif text-lg leading-tight">{s.name}</h3>
-                    <p className="pt-1 text-sm font-medium text-primary">₹{s.price}</p>
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={() => buyNow(s)}
-                        disabled={s.soldOut}
-                        className="inline-flex flex-1 items-center justify-center rounded-full bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
-                      >
-                        {s.soldOut ? "Sold Out" : "Buy Now"}
-                      </button>
-                      <button
-                        aria-label={`Add ${s.name} to basket`}
-                        title="Add to basket"
-                        onClick={() => addToBasket(s)}
-                        disabled={s.soldOut}
-                        className="grid size-10 shrink-0 place-items-center rounded-full border border-primary/40 bg-primary/10 text-primary transition-colors hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <ShoppingBasket className="size-4" />
-                      </button>
+          products === null ? (
+            <div className="mx-auto grid max-w-md grid-cols-1 gap-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="aspect-[4/5] w-full rounded-3xl" />
+              ))}
+            </div>
+          ) : products.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground">No nail sets available right now. Please check back soon.</p>
+          ) : (
+            <div className="mx-auto grid max-w-md grid-cols-1 gap-6">
+              {products.map((p, i) => (
+                <Reveal key={p.id} delay={i * 0.06}>
+                  <div className="group relative overflow-hidden rounded-3xl border bg-card/70 backdrop-blur transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-primary/10">
+                    <div className="relative aspect-square overflow-hidden bg-muted">
+                      <img src={p.imageUrl ?? FALLBACK_IMG} alt={`${p.name} press-on nail set`} loading="lazy" className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 ${p.soldOut ? "opacity-50" : ""}`} />
+                      {p.soldOut && (
+                        <span className="absolute left-3 top-3 rounded-full bg-foreground px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-background">
+                          Sold Out
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-serif text-lg leading-tight">{p.name}</h3>
+                      <p className="pt-1 text-sm font-medium text-primary">
+                        ₹{p.price}
+                        {p.compareAtPrice && p.compareAtPrice > p.price && (
+                          <span className="ml-2 text-xs text-muted-foreground line-through">₹{p.compareAtPrice}</span>
+                        )}
+                      </p>
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          onClick={() => buyNow(p)}
+                          disabled={p.soldOut}
+                          className="inline-flex flex-1 items-center justify-center rounded-full bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                        >
+                          {p.soldOut ? "Sold Out" : "Buy Now"}
+                        </button>
+                        <button
+                          aria-label={`Add ${p.name} to basket`}
+                          title="Add to basket"
+                          onClick={() => addToBasket(p)}
+                          disabled={p.soldOut}
+                          className="grid size-10 shrink-0 place-items-center rounded-full border border-primary/40 bg-primary/10 text-primary transition-colors hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <ShoppingBasket className="size-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+                </Reveal>
+              ))}
+            </div>
+          )
         ) : (
           <div className="grid gap-5 sm:grid-cols-3">
             {CUSTOM_SETS.map((s, i) => (
@@ -115,7 +137,7 @@ export default function Shop() {
         <Reveal delay={0.1}>
           <div className="mx-auto mt-10 flex max-w-xl flex-col items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-6 py-4 text-center sm:flex-row sm:justify-center">
             <Truck className="size-5 text-primary" />
-            <p className="text-sm font-medium">Free delivery all over India on every order</p>
+            <p className="text-sm font-medium">{settings.deliveryNote}</p>
           </div>
         </Reveal>
       </div>
