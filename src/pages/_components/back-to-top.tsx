@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowUp } from "lucide-react";
 
 // Floating button that appears after scrolling down and takes the visitor back to the top.
+// Sits above the mobile bottom nav bar.
 export default function BackToTop() {
   const [show, setShow] = useState(false);
 
@@ -25,7 +26,7 @@ export default function BackToTop() {
           exit={{ opacity: 0, scale: 0.6, y: 20 }}
           whileHover={{ scale: 1.12 }}
           whileTap={{ scale: 0.9 }}
-          className="fixed bottom-4 right-4 z-40 grid size-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-xl ring-2 ring-white/70 md:bottom-6 md:right-6 md:size-16"
+          className="fixed bottom-20 right-4 z-40 grid size-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-xl ring-2 ring-background/70 md:bottom-6 md:right-6 md:size-16"
         >
           <ArrowUp className="size-6 md:size-7" />
         </motion.button>
