@@ -1,8 +1,8 @@
 // Checkout requires sign in and a completed profile. The server calculates the price (including
-// any coupon discount) and saves the order after payment, so every order shows up automatically
-// in "My Orders".
+// any coupon discount, validated against the live coupons table) and saves the order after
+// payment, so every order shows up automatically in "My Orders" with a downloadable invoice.
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, MapPin, Plus, Tag } from "lucide-react";
+import { CheckCircle2, Download, Loader2, MapPin, Plus, Tag } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { toast } from "sonner";
@@ -11,9 +11,9 @@ import { useProfile } from "@/hooks/use-profile.ts";
 import { supabase } from "@/lib/supabase.ts";
 import { formatDeliveryAddress } from "@/lib/profile.ts";
 import type { CheckoutOrder } from "@/lib/catalog.ts";
-import { COUPONS } from "@/lib/coupons.ts";
 import { loadRazorpayScript, type RazorpayResponse } from "@/lib/razorpay.ts";
 import SignInDialog from "./sign-in-dialog.tsx";
+import PromoBanner from "./promo-banner.tsx";
 
 type Props = { order: CheckoutOrder; onClose: () => void; onSuccess?: () => void };
 
@@ -40,6 +40,8 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [paidAmount, setPaidAmount] = useState<number | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   // Once the auth state has finished loading, prompt sign in if the customer isn't signed in yet.
   useEffect(() => {
@@ -47,8 +49,6 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
   }, [authLoading, isSignedIn]);
 
   const normalizedCoupon = couponInput.trim().toUpperCase();
-  const coupon = normalizedCoupon ? COUPONS[normalizedCoupon] : undefined;
-  const previewTotal = coupon ? Math.round(order.total * (1 - coupon.percentOff / 100)) : order.total;
 
   const pay = async () => {
     if (!profile) {
@@ -64,18 +64,20 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
         setShowSignIn(true);
         return;
       }
+      setAccessToken(token);
       await loadRazorpayScript();
 
-      const { ok, data } = await postJson<{ orderId?: string; amount?: number; currency?: string; keyId?: string; couponApplied?: string | null; error?: string }>(
-        "/api/create-order",
-        token,
-        { items: order.items, couponCode: normalizedCoupon || undefined },
-      );
+      const { ok, data } = await postJson<{
+        orderId?: string; amount?: number; currency?: string; keyId?: string;
+        couponApplied?: string | null; couponError?: string | null; error?: string;
+      }>("/api/create-order", token, { items: order.items, couponCode: normalizedCoupon || undefined });
       if (!ok || !data.orderId || !data.keyId || !data.amount) {
         throw new Error(data.error ?? "Could not start payment. Please try again.");
       }
       if (normalizedCoupon && !data.couponApplied) {
-        toast.error("That coupon code isn't valid, so it wasn't applied.");
+        toast.error(data.couponError ?? "That coupon code isn't valid, so it wasn't applied.");
+      } else if (data.couponApplied) {
+        toast.success(`Coupon ${data.couponApplied} applied!`);
       }
       setPaidAmount(data.amount / 100);
 
@@ -119,6 +121,11 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
     }
   };
 
+  const downloadInvoice = () => {
+    if (!accessToken) return;
+    window.open(`/api/invoice?orderId=${encodeURIComponent(orderId ?? "")}&token=${encodeURIComponent(accessToken)}&print=1`, "_blank", "noopener");
+  };
+
   return (
     <>
       <Dialog open={!showSignIn && !isProfileOpen} onOpenChange={(o) => !o && onClose()}>
@@ -128,26 +135,25 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
               <CheckCircle2 className="size-14 text-emerald-500" />
               <DialogTitle className="font-serif text-2xl">Order Confirmed!</DialogTitle>
               <p className="text-sm text-muted-foreground">
-                Your payment of ₹{paidAmount ?? order.total} for {order.title} was successful. You can see your order status anytime in the "My Orders" section.
+                Your payment of ₹{paidAmount ?? order.total} for {order.title} was successful. You can see your order status and download your invoice anytime in the "My Orders" section.
               </p>
-              <button onClick={onClose} className="mt-2 inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]">
-                Done
-              </button>
+              <div className="flex gap-2 pt-1">
+                <button onClick={downloadInvoice} className="inline-flex items-center gap-2 rounded-full border bg-secondary px-5 py-2.5 text-sm font-medium transition-colors hover:bg-secondary/70">
+                  <Download className="size-4" /> Invoice
+                </button>
+                <button onClick={onClose} className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]">
+                  Done
+                </button>
+              </div>
             </div>
           ) : (
             <>
               <DialogTitle className="font-serif text-2xl">Checkout</DialogTitle>
               <p className="text-sm text-muted-foreground">
-                {order.title} ·{" "}
-                {coupon ? (
-                  <>
-                    <span className="line-through">₹{order.total}</span> <span className="font-medium text-primary">₹{previewTotal}</span>
-                  </>
-                ) : (
-                  <span className="font-medium text-primary">₹{order.total}</span>
-                )}
+                {order.title} · <span className="font-medium text-primary">₹{order.total}</span>
               </p>
               <div className="grid gap-4 pt-2">
+                <PromoBanner placement="checkout" />
                 {profileLoading ? (
                   <Skeleton className="h-28 w-full rounded-2xl" />
                 ) : profile ? (
@@ -181,16 +187,15 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
                     onChange={(e) => setCouponInput(e.target.value)}
                     className="h-11 w-full rounded-xl border bg-background/70 px-3 text-sm uppercase"
                   />
-                  {normalizedCoupon && (
-                    <p className={`pt-1 text-xs ${coupon ? "text-emerald-600" : "text-destructive"}`}>
-                      {coupon ? `${coupon.percentOff}% off applied` : "Invalid coupon code"}
-                    </p>
-                  )}
+                  <p className="pt-1 text-xs text-muted-foreground">The final discount is applied and confirmed when you tap Pay.</p>
                 </div>
 
                 {error && <p className="break-words text-sm text-destructive">{error}</p>}
                 <button
-                  onClick={pay}
+                  onClick={() => {
+                    void pay();
+                    setOrderId(null);
+                  }}
                   disabled={!profile || step === "paying"}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary font-medium text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
                 >
@@ -199,7 +204,7 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
                       <Loader2 className="size-4 animate-spin" /> Opening payment...
                     </>
                   ) : (
-                    `Pay ₹${previewTotal}`
+                    `Pay ₹${order.total}`
                   )}
                 </button>
                 <p className="text-center text-xs text-muted-foreground">Secure payment powered by Razorpay. Free delivery all over India.</p>
