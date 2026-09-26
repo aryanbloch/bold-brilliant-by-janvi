@@ -24,12 +24,19 @@ function header(req: ApiRequest, key: string): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
+// Strips surrounding straight/curly quotes, in case the password was pasted into Vercel's
+// dashboard (or a notes app) wrapped in quotes.
+function unquote(s: string): string {
+  return s.replace(/^["'\u201c\u201d\u2018\u2019]+/, "").replace(/["'\u201c\u201d\u2018\u2019]+$/, "");
+}
+
 // Shared admin password check, used by every admin-only endpoint (api/admin.ts, upload-image.ts).
-// Trimmed on both sides: a stray trailing space or newline pasted into the Vercel dashboard
-// (or into the login box) is a common, invisible cause of "incorrect password".
+// Trimmed and unquoted on both sides: a stray trailing space, newline, or wrapping quote pasted
+// into the Vercel dashboard (or into the login box) is a common, invisible cause of "incorrect
+// password".
 export function checkAdminPassword(req: ApiRequest): boolean {
-  const expected = process.env.ADMIN_PASSWORD?.trim();
-  const provided = header(req, "x-admin-password")?.trim();
+  const expected = process.env.ADMIN_PASSWORD ? unquote(process.env.ADMIN_PASSWORD.trim()) : undefined;
+  const provided = header(req, "x-admin-password") ? unquote(header(req, "x-admin-password")!.trim()) : undefined;
   return Boolean(expected) && provided === expected;
 }
 
