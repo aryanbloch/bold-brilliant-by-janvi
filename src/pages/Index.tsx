@@ -9,7 +9,7 @@ import OrderGuide from "./_components/order-guide.tsx";
 import MyOrders from "./_components/my-orders.tsx";
 import FaqContact from "./_components/faq-contact.tsx";
 import Footer from "./_components/footer.tsx";
-import FloatingContacts from "./_components/floating-contacts.tsx";
+import BackToTop from "./_components/back-to-top.tsx";
 
 export default function Index() {
   return (
@@ -27,7 +27,7 @@ export default function Index() {
         <FaqContact />
       </main>
       <Footer />
-      <FloatingContacts />
+      <BackToTop />
     </>
   );
 }

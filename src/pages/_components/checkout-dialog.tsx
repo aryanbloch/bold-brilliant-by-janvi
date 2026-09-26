@@ -18,7 +18,9 @@ type Details = { name: string; phone: string; address: string };
 
 const FIELD = "h-11 rounded-xl bg-background/70";
 
-export default function CheckoutDialog({ product, onClose }: { product: Product; onClose: () => void }) {
+type Props = { product: Product; onClose: () => void; onSuccess?: () => void };
+
+export default function CheckoutDialog({ product, onClose, onSuccess }: Props) {
   const { user, isSignedIn, loading: authLoading } = useCustomerAuth();
   const [showSignIn, setShowSignIn] = useState(false);
   const [details, setDetails] = useState<Details>({ name: "", phone: "", address: "" });
@@ -107,6 +109,7 @@ export default function CheckoutDialog({ product, onClose }: { product: Product;
       }
 
       setStep("success");
+      onSuccess?.();
       toast.success("Payment successful!");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Payment could not be verified. Please contact us on WhatsApp with your payment ID.");

@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Sparkles, Truck } from "lucide-react";
+import { ShoppingBasket, Sparkles, Truck } from "lucide-react";
 import { WhatsappLogo } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
 import { whatsappLink } from "@/lib/site-config.ts";
+import { useCart } from "@/hooks/use-cart.tsx";
 import CheckoutDialog from "./checkout-dialog.tsx";
 
 // Ready-to-shop press-on sets. Edit name/price/image for your real catalogue.
@@ -26,10 +28,16 @@ const img = (id: string) => `https://images.unsplash.com/photo-${id}?fm=webp&q=7
 export default function Shop() {
   const [tab, setTab] = useState<"ready" | "custom">("ready");
   const [checkoutProduct, setCheckoutProduct] = useState<{ name: string; price: number } | null>(null);
+  const { add } = useCart();
 
   const orderCustom = (name: string) => {
     const text = `Hello! I'm interested in the ${name}. Could you help me with the design and pricing?`;
     window.open(whatsappLink(text), "_blank", "noopener");
+  };
+
+  const addToBasket = (s: (typeof READY_SETS)[number]) => {
+    add({ name: s.name, price: s.price, img: img(s.img) });
+    toast.success(`${s.name} added to your basket`);
   };
 
   return (
@@ -59,9 +67,19 @@ export default function Shop() {
                   <div className="p-4">
                     <h3 className="font-serif text-lg leading-tight">{s.name}</h3>
                     <p className="pt-1 text-sm font-medium text-primary">₹{s.price}</p>
-                    <button onClick={() => setCheckoutProduct({ name: s.name, price: s.price })} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]">
-                      Buy Now
-                    </button>
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => setCheckoutProduct({ name: s.name, price: s.price })} className="inline-flex flex-1 items-center justify-center rounded-full bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]">
+                        Buy Now
+                      </button>
+                      <button
+                        aria-label={`Add ${s.name} to basket`}
+                        title="Add to basket"
+                        onClick={() => addToBasket(s)}
+                        className="grid size-10 shrink-0 place-items-center rounded-full border border-primary/40 bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+                      >
+                        <ShoppingBasket className="size-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </Reveal>

@@ -1,4 +1,5 @@
 import Reveal from "@/components/reveal.tsx";
+import { SITE } from "@/lib/site-config.ts";
 
 export default function Founder() {
   return (
@@ -7,12 +8,12 @@ export default function Founder() {
         <div className="grid items-center gap-12 md:grid-cols-2">
           <Reveal className="order-1 md:order-2">
             <img
-              src="https://images.unsplash.com/photo-1645102476534-0837c2be0a12?fm=webp&q=70&fit=crop&w=800&h=900"
-              alt="Janvi Sarang, founder and nail artist at Bold & Brilliant"
+              src={SITE.founderPhoto}
+              alt="Janvi Sarang, founder and nail artist, at the Bold & Brilliant studio in Rajkot"
               loading="lazy"
-              width={800}
-              height={900}
-              className="aspect-[8/9] w-full rounded-[2rem] object-cover shadow-2xl shadow-primary/20"
+              width={534}
+              height={720}
+              className="mx-auto aspect-[3/4] w-full max-w-md rounded-[2rem] object-cover object-top shadow-2xl shadow-primary/20"
             />
           </Reveal>
           <Reveal delay={0.1} className="order-2 md:order-1">

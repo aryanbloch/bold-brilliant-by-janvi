@@ -2,11 +2,13 @@
 export const SITE = {
   brand: "Bold & Brilliant",
   byline: "by Janvi Sarang",
-  logo: "https://hercules-cdn.com/file_irYw5rC3lv2ZNOmiiLXRaAWg",
+  // Served from public/logo.jpg
+  logo: "/logo.jpg",
+  founderPhoto: "https://hercules-cdn.com/file_Do0YX4VPKpj36aoO4e7QA7gl",
   // Replace with the real number incl. country code, digits only (e.g. "919876543210")
   whatsappNumber: "YOUR_WHATSAPP_NUMBER",
-  instagramUser: "bold.brilliant.byjanvi",
-  instagramUrl: "https://www.instagram.com/bold.brilliant.byjanvi",
+  instagramUser: "bold__and__brilliant",
+  instagramUrl: "https://www.instagram.com/bold__and__brilliant",
   mapsUrl: "https://maps.app.goo.gl/jpdYwRzNMrp4Sxzm8",
   address: "Astha Chowk, Railnagar, Rajkot - 360001",
   hours: [
@@ -26,6 +28,7 @@ export const whatsappLink = (text?: string) =>
   `https://wa.me/${SITE.whatsappNumber}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
 
 export const NAV = [
+  { label: "Home", href: "#top" },
   { label: "Shop", href: "#shop" },
   { label: "About", href: "#about" },
   { label: "Book", href: "#booking" },

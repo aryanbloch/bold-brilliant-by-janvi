@@ -1,15 +1,19 @@
 import { useState } from "react";
-import { LogOut, Menu, User, X } from "lucide-react";
+import { LogOut, Menu, ShoppingBasket, User, X } from "lucide-react";
 import { NAV, SITE } from "@/lib/site-config.ts";
 import { cn } from "@/lib/utils.ts";
 import { useCustomerAuth } from "@/hooks/use-customer-auth.ts";
+import { useCart } from "@/hooks/use-cart.tsx";
 import { isSupabaseConfigured } from "@/lib/supabase.ts";
 import SignInDialog from "./sign-in-dialog.tsx";
+import CartDialog from "./cart-dialog.tsx";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [showCart, setShowCart] = useState(false);
   const { isSignedIn, user, signOut } = useCustomerAuth();
+  const { count } = useCart();
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3">
@@ -21,34 +25,48 @@ export default function Header() {
             <span className="block text-[10px] font-sans uppercase tracking-[0.25em] text-white/70">{SITE.byline}</span>
           </span>
         </a>
-        <ul className="hidden gap-7 text-sm md:flex">
+        <ul className="hidden gap-6 text-sm lg:gap-7 md:flex">
           {NAV.map((n) => (
             <li key={n.href}>
               <a href={n.href} className="transition-colors hover:text-pink-200">{n.label}</a>
             </li>
           ))}
         </ul>
-        <div className="hidden items-center gap-3 md:flex">
-          {isSupabaseConfigured && (
-            isSignedIn ? (
-              <button onClick={() => void signOut()} title={user?.email ?? undefined} className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20">
-                <LogOut className="size-3.5" /> Sign Out
-              </button>
-            ) : (
-              <button onClick={() => setShowSignIn(true)} className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20">
-                <User className="size-3.5" /> Sign In
-              </button>
-            )
-          )}
-          <a href="#booking" className="rounded-full bg-primary px-5 py-2 text-sm text-primary-foreground transition-transform hover:scale-105">
-            Book Now
-          </a>
+        <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-3 md:flex">
+            {isSupabaseConfigured && (
+              isSignedIn ? (
+                <button onClick={() => void signOut()} title={user?.email ?? undefined} className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20">
+                  <LogOut className="size-3.5" /> Sign Out
+                </button>
+              ) : (
+                <button onClick={() => setShowSignIn(true)} className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20">
+                  <User className="size-3.5" /> Sign In
+                </button>
+              )
+            )}
+            <a href="#booking" className="rounded-full bg-primary px-5 py-2 text-sm text-primary-foreground transition-transform hover:scale-105">
+              Book Now
+            </a>
+          </div>
+          <button
+            aria-label={`Open basket (${count} items)`}
+            onClick={() => setShowCart(true)}
+            className="relative grid size-10 place-items-center rounded-full border border-white/25 bg-white/10 transition-colors hover:bg-white/20"
+          >
+            <ShoppingBasket className="size-5" />
+            {count > 0 && (
+              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground ring-2 ring-black/30">
+                {count}
+              </span>
+            )}
+          </button>
+          <button aria-label="Menu" className="md:hidden" onClick={() => setOpen(!open)}>
+            {open ? <X /> : <Menu />}
+          </button>
         </div>
-        <button aria-label="Menu" className="md:hidden" onClick={() => setOpen(!open)}>
-          {open ? <X /> : <Menu />}
-        </button>
       </nav>
-      <div className={cn("mx-auto max-w-6xl overflow-hidden rounded-3xl bg-black/70 backdrop-blur-md transition-all md:hidden", open ? "mt-2 max-h-[32rem]" : "max-h-0")}>
+      <div className={cn("mx-auto max-w-6xl overflow-hidden rounded-3xl bg-black/70 backdrop-blur-md transition-all md:hidden", open ? "mt-2 max-h-[36rem]" : "max-h-0")}>
         <ul className="flex flex-col p-4 text-white">
           {NAV.map((n) => (
             <li key={n.href}>
@@ -84,6 +102,7 @@ export default function Header() {
       </div>
 
       <SignInDialog open={showSignIn} onClose={() => setShowSignIn(false)} />
+      <CartDialog open={showCart} onClose={() => setShowCart(false)} />
     </header>
   );
 }

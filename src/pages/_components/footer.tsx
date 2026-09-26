@@ -1,14 +1,23 @@
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog.tsx";
+import SocialButtons from "@/components/social-buttons.tsx";
 import { NAV, SITE } from "@/lib/site-config.ts";
+
+// My Orders stays in the header menu only.
+const FOOTER_NAV = NAV.filter((n) => n.href !== "#my-orders");
 
 const POLICIES = [
   {
     title: "Privacy Policy",
     points: [
-      "We do not store any personal data on this website. There are no accounts or logins.",
-      "When you use the booking or order form, your details are placed into a WhatsApp message on your own device. Nothing is sent until you press Send in WhatsApp.",
-      "Details you share with us on WhatsApp or Instagram are used only to manage your appointment or order and are never sold or shared.",
+      "We only collect the details needed to deliver your order: your name, phone number, delivery address and the email you sign in with.",
+      "Sign in is handled securely with an email link or Google. We never see or store your password.",
+      "Payments are processed securely by Razorpay. We never see or store your card, UPI or bank details. We only keep the payment reference for your order.",
+      "Your orders are private. Only you can see them in My Orders when you are signed in.",
+      "Your details are used only to process and deliver your order, share tracking updates and manage appointments. We share your delivery details only with our courier partner, and we never sell your data.",
+      "Booking requests are placed into a WhatsApp message on your own device. Nothing is sent until you press Send in WhatsApp.",
+      "Your basket is saved only in your own browser and is not sent to us until you check out.",
       "Clicking WhatsApp, Instagram or Google Maps takes you to those services, which have their own privacy policies.",
+      "Want your account or order details deleted? Message us on WhatsApp and we will remove them.",
       `For any privacy question, message us on WhatsApp or visit us at ${SITE.address}.`,
     ],
   },
@@ -18,7 +27,7 @@ const POLICIES = [
       "We offer free delivery all over India on every ready-to-shop and custom nail set order.",
       "Ready-to-shop sets are usually dispatched within 1-3 business days of order confirmation.",
       "Custom and bridal sets are dispatched once the design is finalised, typically within 5-7 business days.",
-      "You'll receive tracking details on WhatsApp once your order is shipped.",
+      "Once your order is shipped, you can follow its delivery in My Orders, and we'll also share tracking details on WhatsApp.",
       "Delivery timelines may vary slightly for remote locations.",
     ],
   },
@@ -38,10 +47,10 @@ const POLICIES = [
     title: "Terms",
     points: [
       "Appointments are confirmed only after we reply to your WhatsApp booking request.",
-      "Orders are confirmed only after we reply to your WhatsApp order request and confirm payment.",
+      "Online shop orders are confirmed once your payment is successful. Custom orders are confirmed after we reply on WhatsApp and confirm payment.",
       "Please arrive on time for studio appointments. Late arrivals may get a shorter session or need to reschedule.",
       "Kindly inform us at least 24 hours in advance if you need to cancel or reschedule an appointment.",
-      "Final prices depend on the design, length and add-ons, and are shared before the service or order is confirmed.",
+      "Final prices for custom work depend on the design, length and add-ons, and are shared before the service or order is confirmed.",
       "Portfolio and shop images are for inspiration. Final results may vary slightly with nail shape and length.",
       "Please tell us about any allergies or skin or nail conditions before your service.",
     ],
@@ -52,17 +61,17 @@ export default function Footer() {
   return (
     <footer className="border-t bg-secondary/40 px-5 pb-6 pt-12">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <img src={SITE.logo} alt={SITE.brand} className="size-12 rounded-full object-cover ring-1 ring-border" />
+        <div className="flex items-start gap-3">
+          <img src={SITE.logo} alt={SITE.brand} className="size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
           <div>
             <p className="font-serif text-2xl font-semibold">{SITE.brand}</p>
             <p className="text-sm text-muted-foreground">{SITE.byline} · Nail Art Studio, Rajkot, Gujarat</p>
-            <p className="pt-1 text-sm font-medium text-primary">{SITE.delivery}</p>
+            <SocialButtons className="pt-4" />
           </div>
         </div>
         <nav aria-label="Footer">
           <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            {NAV.map((n) => (
+            {FOOTER_NAV.map((n) => (
               <li key={n.href}><a href={n.href} className="hover:text-primary">{n.label}</a></li>
             ))}
           </ul>
