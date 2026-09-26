@@ -108,7 +108,7 @@ export default function Booking() {
   const err = (k: keyof FormValues) => errors[k] && <p className="pt-1 text-xs text-destructive">{errors[k]?.message}</p>;
 
   return (
-    <section id="booking" className="relative overflow-hidden px-5 py-16 md:py-24">
+    <section className="relative overflow-hidden px-5 py-16 md:py-24">
       <div className="absolute -right-32 top-20 h-80 w-80 rounded-full bg-primary/20 blur-[70px]" />
       <div className="absolute -left-32 bottom-10 h-80 w-80 rounded-full bg-accent/30 blur-[70px]" />
       <div className="relative mx-auto max-w-3xl">
