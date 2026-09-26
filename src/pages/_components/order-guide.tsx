@@ -11,7 +11,7 @@ const GUIDES = [
   {
     icon: ShoppingBag,
     q: "How to Order",
-    a: "1. Browse our ready-to-shop sets or tell us your custom design idea.\n2. Message us on WhatsApp with the set name or your reference photos.\n3. Share your nail sizes (we'll help you measure) and delivery address.\n4. Confirm payment and we'll pack and ship your set with free delivery all over India.",
+    a: "1. Tap Buy Now on any ready-to-shop set, or add a few sets to your basket.\n2. Sign in with Google or your email.\n3. First time? Add your mobile number, delivery address and billing details once in your profile - they're saved for every future order.\n4. Pay securely online with UPI, card or net banking.\n5. We'll message you on WhatsApp for your nail sizes, then pack and ship your set with free delivery all over India.\n6. Track your order anytime in My Orders.\n\nWant a custom or bridal set? Open the Custom Sets tab and tap Enquire on WhatsApp to share your design idea.",
   },
   {
     icon: HandHeart,

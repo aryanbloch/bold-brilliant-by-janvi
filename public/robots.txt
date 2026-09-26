@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://boldbrilliantbyjanvi.vercel.app/sitemap.xml
+Sitemap: https://bold-brilliant-by-janvi.vercel.app/sitemap.xml

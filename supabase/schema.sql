@@ -1,6 +1,6 @@
--- Run this once in the Supabase SQL editor (Project -> SQL Editor -> New query) after creating
--- your project. Sets up the orders and profiles tables and locks them down so customers only
--- ever see their own data. Safe to run again: existing tables and policies are kept.
+-- Run this in the Supabase SQL editor (Project -> SQL Editor -> New query). Sets up the orders
+-- and profiles tables and locks them down so customers only ever see their own data.
+-- Safe to run again: existing tables and data are kept.
 
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
@@ -18,6 +18,8 @@ create table if not exists public.orders (
 );
 
 create index if not exists orders_user_id_idx on public.orders (user_id);
+-- One order per payment, so a retry can never create a duplicate order.
+create unique index if not exists orders_razorpay_payment_id_key on public.orders (razorpay_payment_id);
 
 alter table public.orders enable row level security;
 
@@ -26,10 +28,9 @@ create policy "Customers can view their own orders"
   on public.orders for select
   using (auth.uid() = user_id);
 
+-- Orders are created only by the server after a verified payment (api/verify-payment.ts),
+-- so customers are NOT allowed to insert orders themselves.
 drop policy if exists "Customers can insert their own orders" on public.orders;
-create policy "Customers can insert their own orders"
-  on public.orders for insert
-  with check (auth.uid() = user_id);
 
 -- Customer profile: contact, delivery address and billing details (one row per customer).
 create table if not exists public.profiles (

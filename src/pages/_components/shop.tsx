@@ -4,18 +4,9 @@ import { WhatsappLogo } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
 import { whatsappLink } from "@/lib/site-config.ts";
+import { READY_SETS, setImage, type CheckoutOrder } from "@/lib/catalog.ts";
 import { useCart } from "@/hooks/use-cart.tsx";
 import CheckoutDialog from "./checkout-dialog.tsx";
-
-// Ready-to-shop press-on sets. Edit name/price/image for your real catalogue.
-const READY_SETS = [
-  { name: "Nude Glaze Set", price: 599, img: "1610992015762-45dca7fa3a85" },
-  { name: "Classic French Set", price: 649, img: "1727199433231-346fd8101839" },
-  { name: "Pearl Bloom Set", price: 799, img: "1630843599725-32ead7671867" },
-  { name: "Gold Chrome Set", price: 899, img: "1758605456817-5febca1dfeb0" },
-  { name: "Rosy Minimal Set", price: 549, img: "1612887390768-fb02affea7a6" },
-  { name: "Sparkle Stiletto Set", price: 999, img: "1758605456822-24b5311e100c" },
-];
 
 const CUSTOM_SETS = [
   { name: "Custom Everyday Set", price: "Starts at ₹699", desc: "Your choice of shape, length and 1-2 colours." },
@@ -23,11 +14,11 @@ const CUSTOM_SETS = [
   { name: "Custom Bridal Set", price: "Starts at ₹1,999", desc: "Fully personalised bridal design with trial option." },
 ];
 
-const img = (id: string) => `https://images.unsplash.com/photo-${id}?fm=webp&q=70&fit=crop&w=500&h=625`;
+type ReadySet = (typeof READY_SETS)[number];
 
 export default function Shop() {
   const [tab, setTab] = useState<"ready" | "custom">("ready");
-  const [checkoutProduct, setCheckoutProduct] = useState<{ name: string; price: number } | null>(null);
+  const [checkout, setCheckout] = useState<CheckoutOrder | null>(null);
   const { add } = useCart();
 
   const orderCustom = (name: string) => {
@@ -35,10 +26,12 @@ export default function Shop() {
     window.open(whatsappLink(text), "_blank", "noopener");
   };
 
-  const addToBasket = (s: (typeof READY_SETS)[number]) => {
-    add({ name: s.name, price: s.price, img: img(s.img) });
+  const addToBasket = (s: ReadySet) => {
+    add({ name: s.name, price: s.price, img: setImage(s.img) });
     toast.success(`${s.name} added to your basket`);
   };
+
+  const buyNow = (s: ReadySet) => setCheckout({ items: [{ name: s.name, qty: 1 }], title: s.name, total: s.price });
 
   return (
     <section id="shop" className="px-5 py-16 md:py-24">
@@ -62,13 +55,13 @@ export default function Shop() {
               <Reveal key={s.name} delay={i * 0.06}>
                 <div className="group overflow-hidden rounded-3xl border bg-card/70 backdrop-blur transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-primary/10">
                   <div className="relative aspect-[4/5] overflow-hidden bg-muted">
-                    <img src={img(s.img)} alt={`${s.name} press-on nail set`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <img src={setImage(s.img)} alt={`${s.name} press-on nail set`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
                   </div>
                   <div className="p-4">
                     <h3 className="font-serif text-lg leading-tight">{s.name}</h3>
                     <p className="pt-1 text-sm font-medium text-primary">₹{s.price}</p>
                     <div className="mt-3 flex gap-2">
-                      <button onClick={() => setCheckoutProduct({ name: s.name, price: s.price })} className="inline-flex flex-1 items-center justify-center rounded-full bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]">
+                      <button onClick={() => buyNow(s)} className="inline-flex flex-1 items-center justify-center rounded-full bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]">
                         Buy Now
                       </button>
                       <button
@@ -113,7 +106,7 @@ export default function Shop() {
         </Reveal>
       </div>
 
-      {checkoutProduct && <CheckoutDialog product={checkoutProduct} onClose={() => setCheckoutProduct(null)} />}
+      {checkout && <CheckoutDialog order={checkout} onClose={() => setCheckout(null)} />}
     </section>
   );
 }

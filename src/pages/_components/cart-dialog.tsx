@@ -3,20 +3,22 @@ import { Minus, Plus, ShoppingBasket, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.tsx";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty.tsx";
 import { useCart } from "@/hooks/use-cart.tsx";
+import type { CheckoutOrder } from "@/lib/catalog.ts";
 import CheckoutDialog from "./checkout-dialog.tsx";
-
-type Product = { name: string; price: number };
 
 const QTY_BTN = "grid size-7 place-items-center rounded-full border bg-background transition-colors hover:bg-secondary";
 
 export default function CartDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { items, total, setQty, remove, clear } = useCart();
   // Snapshot the basket at checkout so the success screen still shows it after the basket is cleared.
-  const [checkoutProduct, setCheckoutProduct] = useState<Product | null>(null);
+  const [checkout, setCheckout] = useState<CheckoutOrder | null>(null);
 
   const startCheckout = () => {
-    const name = items.map((i) => (i.qty > 1 ? `${i.name} x${i.qty}` : i.name)).join(", ");
-    setCheckoutProduct({ name, price: total });
+    setCheckout({
+      items: items.map((i) => ({ name: i.name, qty: i.qty })),
+      title: items.map((i) => (i.qty > 1 ? `${i.name} x${i.qty}` : i.name)).join(", "),
+      total,
+    });
     onClose();
   };
 
@@ -57,7 +59,7 @@ export default function CartDialog({ open, onClose }: { open: boolean; onClose: 
                           <Minus className="size-3.5" />
                         </button>
                         <span className="w-5 text-center text-sm font-medium">{i.qty}</span>
-                        <button aria-label="Increase quantity" onClick={() => setQty(i.name, i.qty + 1)} className={QTY_BTN}>
+                        <button aria-label="Increase quantity" onClick={() => setQty(i.name, Math.min(i.qty + 1, 20))} className={QTY_BTN}>
                           <Plus className="size-3.5" />
                         </button>
                       </div>
@@ -81,7 +83,7 @@ export default function CartDialog({ open, onClose }: { open: boolean; onClose: 
         </DialogContent>
       </Dialog>
 
-      {checkoutProduct && <CheckoutDialog product={checkoutProduct} onClose={() => setCheckoutProduct(null)} onSuccess={clear} />}
+      {checkout && <CheckoutDialog order={checkout} onClose={() => setCheckout(null)} onSuccess={clear} />}
     </>
   );
 }
