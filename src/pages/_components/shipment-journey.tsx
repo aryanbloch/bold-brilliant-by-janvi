@@ -1,5 +1,7 @@
 // Shows the live courier journey (Shipped -> reached City X -> Out for Delivery -> Delivered)
-// for one order, fetched automatically from /api/track-shipment. No tracking number typing needed.
+// for one order, fetched automatically from /api/track-shipment using the order id. No tracking
+// number typing needed - and every fetch also refreshes the order's cached status, auto-marking
+// it "Delivered" the moment the courier confirms delivery.
 import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, MapPin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
@@ -7,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton.tsx";
 type TrackingEvent = { status: string; location: string; date: string };
 type TrackingResult = { courier: string; currentStatus: string; currentLocation: string; events: TrackingEvent[] };
 
-export default function ShipmentJourney({ trackingNumber }: { trackingNumber: string }) {
+export default function ShipmentJourney({ orderId }: { orderId: string }) {
   const [state, setState] = useState<{ loading: boolean; data: TrackingResult | null; error: string | null }>({
     loading: true,
     data: null,
@@ -17,7 +19,7 @@ export default function ShipmentJourney({ trackingNumber }: { trackingNumber: st
   useEffect(() => {
     let active = true;
     setState({ loading: true, data: null, error: null });
-    fetch(`/api/track-shipment?trackingNumber=${encodeURIComponent(trackingNumber)}`)
+    fetch(`/api/track-shipment?orderId=${encodeURIComponent(orderId)}`)
       .then(async (res) => {
         const body = (await res.json()) as TrackingResult & { error?: string };
         if (!active) return;
@@ -33,7 +35,7 @@ export default function ShipmentJourney({ trackingNumber }: { trackingNumber: st
     return () => {
       active = false;
     };
-  }, [trackingNumber]);
+  }, [orderId]);
 
   if (state.loading) return <Skeleton className="h-20 w-full rounded-2xl" />;
 
