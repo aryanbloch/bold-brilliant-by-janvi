@@ -1,8 +1,8 @@
 import Header from "./_components/header.tsx";
 import Hero from "./_components/hero.tsx";
 import Showcase from "./_components/showcase.tsx";
-import Gallery from "./_components/gallery.tsx";
 import Shop from "./_components/shop.tsx";
+import Gallery from "./_components/gallery.tsx";
 import About from "./_components/about.tsx";
 import Founder from "./_components/founder.tsx";
 import Testimonials from "./_components/testimonials.tsx";
@@ -20,9 +20,9 @@ export default function Index() {
       <main>
         <Hero />
         <Showcase />
+        <Shop />
         <Gallery />
         <About />
-        <Shop />
         <Founder />
         <Testimonials />
         <Booking />
