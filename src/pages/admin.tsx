@@ -1,8 +1,8 @@
-// Full studio admin panel: sign in with the admin password, then manage every part of the
-// website - dashboard, orders (dispatch/tracking), shop products, coupons, banners, bookings,
-// gallery, reviews, contact/site details, policy text, and the invoice design.
+// Full studio admin panel: sign in with the admin password, then manage the website from a
+// hamburger menu. Day-to-day work (orders, shop, coupons...) and Website Settings (contact,
+// text, invoice design) are shown as separate groups in the menu.
 import { useEffect, useState, type FormEvent } from "react";
-import { Loader2, LogOut } from "lucide-react";
+import { Loader2, LogOut, Menu, X } from "lucide-react";
 import { toast } from "sonner";
 import { clearStoredPassword, getStoredPassword, storePassword } from "./_admin/api.ts";
 import DashboardTab from "./_admin/dashboard-tab.tsx";
@@ -11,24 +11,28 @@ import ProductsTab from "./_admin/products-tab.tsx";
 import CouponsTab from "./_admin/coupons-tab.tsx";
 import BannersTab from "./_admin/banners-tab.tsx";
 import BookingsTab from "./_admin/bookings-tab.tsx";
-import GalleryTab from "./_admin/gallery-tab.tsx";
 import ReviewsTab from "./_admin/reviews-tab.tsx";
 import SiteSettingsTab from "./_admin/site-settings-tab.tsx";
 import ContentTab from "./_admin/content-tab.tsx";
 import InvoiceTemplateTab from "./_admin/invoice-template-tab.tsx";
 
 const TABS = [
-  { id: "dashboard", label: "Dashboard", Component: DashboardTab },
-  { id: "orders", label: "Orders", Component: OrdersTab },
-  { id: "products", label: "Shop", Component: ProductsTab },
-  { id: "coupons", label: "Coupons", Component: CouponsTab },
-  { id: "banners", label: "Banners", Component: BannersTab },
-  { id: "bookings", label: "Bookings", Component: BookingsTab },
-  { id: "gallery", label: "Gallery", Component: GalleryTab },
-  { id: "reviews", label: "Reviews", Component: ReviewsTab },
-  { id: "settings", label: "Contact & Site", Component: SiteSettingsTab },
-  { id: "content", label: "Website Text", Component: ContentTab },
-  { id: "invoice", label: "Invoice Design", Component: InvoiceTemplateTab },
+  { id: "dashboard", label: "Dashboard", group: "manage", Component: DashboardTab },
+  { id: "orders", label: "Orders", group: "manage", Component: OrdersTab },
+  { id: "bookings", label: "Bookings", group: "manage", Component: BookingsTab },
+  { id: "products", label: "Shop", group: "manage", Component: ProductsTab },
+  { id: "coupons", label: "Coupons", group: "manage", Component: CouponsTab },
+  { id: "banners", label: "Coupon Banners", group: "manage", Component: BannersTab },
+  { id: "reviews", label: "Reviews", group: "manage", Component: ReviewsTab },
+  { id: "settings", label: "Contact & Social", group: "settings", Component: SiteSettingsTab },
+  { id: "content", label: "Website Text", group: "settings", Component: ContentTab },
+  { id: "invoice", label: "Invoice Design", group: "settings", Component: InvoiceTemplateTab },
+] as const;
+type TabId = (typeof TABS)[number]["id"];
+
+const GROUPS = [
+  { id: "manage", label: "Manage" },
+  { id: "settings", label: "Website Settings" },
 ] as const;
 
 async function checkPassword(password: string): Promise<{ ok: boolean; error?: string }> {
@@ -85,45 +89,64 @@ function Login({ onSignedIn }: { onSignedIn: (password: string) => void }) {
 }
 
 function Dashboard({ password, onSignOut }: { password: string; onSignOut: () => void }) {
-  const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("dashboard");
+  const [tab, setTab] = useState<TabId>("dashboard");
+  const [menuOpen, setMenuOpen] = useState(false);
   const active = TABS.find((t) => t.id === tab) ?? TABS[0];
   const Component = active.Component;
 
-  return (
-    <div className="flex min-h-screen bg-secondary/20">
-      <aside className="hidden w-56 shrink-0 flex-col border-r bg-card p-4 md:flex">
-        <h1 className="px-2 pb-4 font-serif text-xl">Studio Admin</h1>
-        <nav className="flex-1 space-y-1">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`block w-full rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors ${tab === t.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-        <button onClick={onSignOut} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
-          <LogOut className="size-4" /> Sign Out
-        </button>
-      </aside>
+  const choose = (id: TabId) => {
+    setTab(id);
+    setMenuOpen(false);
+  };
 
-      <div className="flex-1 overflow-x-hidden">
-        <div className="flex items-center justify-between border-b bg-card px-4 py-3 md:hidden">
-          <select value={tab} onChange={(e) => setTab(e.target.value as (typeof TABS)[number]["id"])} className="h-10 flex-1 rounded-xl border bg-background px-3 text-sm">
-            {TABS.map((t) => (
-              <option key={t.id} value={t.id}>{t.label}</option>
-            ))}
-          </select>
-          <button onClick={onSignOut} className="ml-2 rounded-xl border bg-background px-3 py-2 text-sm">
-            <LogOut className="size-4" />
-          </button>
+  return (
+    <div className="min-h-screen bg-secondary/20">
+      <header className="sticky top-0 z-30 flex items-center gap-3 border-b bg-card px-4 py-3">
+        <button onClick={() => setMenuOpen(true)} aria-label="Open menu" className="grid size-10 place-items-center rounded-xl border bg-background hover:bg-muted">
+          <Menu className="size-5" />
+        </button>
+        <h1 className="font-serif text-xl">Studio Admin</h1>
+        <span className="truncate text-sm text-muted-foreground">/ {active.label}</span>
+      </header>
+
+      {menuOpen && (
+        <div className="fixed inset-0 z-40">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMenuOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col overflow-y-auto bg-card p-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-4">
+              <h2 className="px-2 font-serif text-xl">Menu</h2>
+              <button onClick={() => setMenuOpen(false)} aria-label="Close menu" className="grid size-9 place-items-center rounded-xl hover:bg-muted">
+                <X className="size-5" />
+              </button>
+            </div>
+            <nav className="flex-1 space-y-5">
+              {GROUPS.map((g) => (
+                <div key={g.id}>
+                  <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{g.label}</p>
+                  <div className="space-y-1">
+                    {TABS.filter((t) => t.group === g.id).map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => choose(t.id)}
+                        className={`block w-full rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors ${tab === t.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </nav>
+            <button onClick={onSignOut} className="mt-4 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
+              <LogOut className="size-4" /> Sign Out
+            </button>
+          </aside>
         </div>
-        <main className="p-4 md:p-8">
-          <Component password={password} />
-        </main>
-      </div>
+      )}
+
+      <main className="mx-auto max-w-6xl p-4 md:p-8">
+        <Component password={password} />
+      </main>
     </div>
   );
 }
