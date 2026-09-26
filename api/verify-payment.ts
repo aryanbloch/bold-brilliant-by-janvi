@@ -1,18 +1,11 @@
-// Verifies the Razorpay payment signature on the server, then saves the order to Supabase.
-// Orders can only be created here, after a real payment, so nobody can add fake "paid" orders.
+// Verifies the Razorpay payment signature on the server, then saves the order to Supabase
+// (an "orders" insert trigger auto-creates the invoice). Orders can only be created here, after
+// a real payment, so nobody can add fake "paid" orders. If a coupon was used, also records the
+// redemption (this is what enforces per-user and total usage limits).
 // Env vars (Vercel): RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, SUPABASE_SERVICE_ROLE_KEY,
 // and SUPABASE_URL (falls back to VITE_SUPABASE_URL).
 import { createHmac, timingSafeEqual } from "node:crypto";
-
-interface ApiRequest {
-  method?: string;
-  body?: unknown;
-  headers?: Record<string, string | string[] | undefined>;
-}
-interface ApiResponse {
-  status: (code: number) => ApiResponse;
-  json: (data: unknown) => void;
-}
+import { dbFetch, getEnv, getUserId, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
 
 type Profile = {
   full_name: string;
@@ -30,16 +23,6 @@ type Profile = {
   billing_address: string | null;
   gstin: string | null;
 };
-
-async function getUserId(req: ApiRequest, url: string, serviceKey: string): Promise<string | null> {
-  const raw = req.headers?.authorization;
-  const header = Array.isArray(raw) ? raw[0] : raw;
-  if (!header?.startsWith("Bearer ")) return null;
-  const res = await fetch(`${url}/auth/v1/user`, { headers: { apikey: serviceKey, Authorization: header } });
-  if (!res.ok) return null;
-  const user = (await res.json()) as { id?: string };
-  return user.id ?? null;
-}
 
 function formatAddress(p: Profile): string {
   const main = [p.address_line1, p.address_line2, p.landmark && `Landmark: ${p.landmark}`, `${p.city}, ${p.state} - ${p.pincode}`]
@@ -73,12 +56,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
-  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!keyId || !keySecret || !supabaseUrl || !serviceKey) {
+  const env = getEnv();
+  if (!keyId || !keySecret || !env) {
     res.status(500).json({ error: "Payment gateway is not configured yet." });
     return;
   }
+  const { supabaseUrl, serviceKey } = env;
 
   const expected = createHmac("sha256", keySecret).update(`${orderId}|${paymentId}`).digest("hex");
   if (!signatureMatches(expected, signature)) {
@@ -98,14 +81,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${encodeURIComponent(orderId)}`, {
       headers: { Authorization: `Basic ${auth}` },
     });
-    const order = (await orderRes.json()) as { amount?: number; notes?: { user_id?: string; items?: string } };
+    const order = (await orderRes.json()) as {
+      amount?: number;
+      notes?: { user_id?: string; items?: string; summary?: string; coupon?: string; subtotal?: string; discount?: string };
+    };
     if (!orderRes.ok || typeof order.amount !== "number" || order.notes?.user_id !== userId) {
       res.status(400).json({ error: "This payment does not match your account. Please contact us on WhatsApp with your payment ID." });
       return;
     }
 
-    const dbHeaders = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" };
-    const profileRes = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${userId}&select=*`, { headers: dbHeaders });
+    const profileRes = await dbFetch(supabaseUrl, serviceKey, `profiles?id=eq.${userId}&select=*`);
     const profiles = (await profileRes.json()) as Profile[];
     const profile = Array.isArray(profiles) ? profiles[0] : undefined;
     if (!profile) {
@@ -113,13 +98,27 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return;
     }
 
-    const insertRes = await fetch(`${supabaseUrl}/rest/v1/orders`, {
+    let items: { name: string; qty: number; price: number }[] = [];
+    try {
+      items = order.notes?.items ? JSON.parse(order.notes.items) : [];
+    } catch {
+      items = [];
+    }
+    const couponCode = order.notes?.coupon || null;
+    const subtotal = order.notes?.subtotal ? Number(order.notes.subtotal) : order.amount / 100;
+    const discount = order.notes?.discount ? Number(order.notes.discount) : 0;
+
+    const insertRes = await dbFetch(supabaseUrl, serviceKey, "orders", {
       method: "POST",
-      headers: { ...dbHeaders, Prefer: "return=minimal" },
+      headers: { Prefer: "return=representation" },
       body: JSON.stringify({
         user_id: userId,
-        product_name: order.notes.items ?? "Nail set order",
+        product_name: order.notes?.summary ?? "Nail set order",
         amount: order.amount / 100,
+        items,
+        subtotal,
+        discount,
+        coupon_code: couponCode,
         customer_name: profile.full_name,
         phone: `+91 ${profile.phone}`,
         address: formatAddress(profile),
@@ -132,6 +131,25 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     if (!insertRes.ok && insertRes.status !== 409) {
       res.status(500).json({ error: "Your payment was received, but we could not save your order. Please contact us on WhatsApp with your payment ID." });
       return;
+    }
+
+    // Record the coupon redemption so usage limits are enforced (safe to skip on failure/retry).
+    if (couponCode && insertRes.ok) {
+      try {
+        const savedOrders = (await insertRes.json()) as { id?: string }[];
+        const savedOrderId = savedOrders[0]?.id;
+        const couponRes = await dbFetch(supabaseUrl, serviceKey, `coupons?code=eq.${encodeURIComponent(couponCode)}&select=id`);
+        const coupons = (await couponRes.json()) as { id: string }[];
+        if (savedOrderId && coupons[0]) {
+          await dbFetch(supabaseUrl, serviceKey, "coupon_redemptions", {
+            method: "POST",
+            headers: { Prefer: "return=minimal,resolution=ignore-duplicates" },
+            body: JSON.stringify({ coupon_id: coupons[0].id, user_id: userId, order_id: savedOrderId, discount_amount: discount }),
+          });
+        }
+      } catch {
+        // Non-critical: the order itself is already saved and paid.
+      }
     }
 
     res.status(200).json({ verified: true });
