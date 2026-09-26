@@ -3,7 +3,7 @@ import { FacebookLogo, InstagramLogo, TelegramLogo, WhatsappLogo, XLogo, Youtube
 import { useSiteSettings, whatsappLinkFor } from "@/hooks/use-site-settings.tsx";
 
 // Floating WhatsApp / Instagram / Facebook / YouTube / X / Telegram buttons. Each can be
-// switched on/off from Admin > Contact & Social.
+// switched on/off from Admin > Contact & Social. Sits above the mobile bottom nav bar.
 export default function FloatingContacts() {
   const s = useSiteSettings();
   const buttons = [
@@ -18,7 +18,7 @@ export default function FloatingContacts() {
   if (buttons.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex flex-col gap-3 md:bottom-6 md:right-6">
+    <div className="fixed bottom-20 right-4 z-40 flex flex-col gap-3 md:bottom-6 md:right-6">
       {buttons.map(({ label, href, Icon, cls, weight }) => (
         <motion.a
           key={label}
@@ -28,7 +28,7 @@ export default function FloatingContacts() {
           aria-label={label}
           whileHover={{ scale: 1.12 }}
           whileTap={{ scale: 0.9 }}
-          className={`relative grid size-12 place-items-center rounded-full text-white shadow-xl ring-2 ring-white/70 md:size-16 ${cls}`}
+          className={`relative grid size-12 place-items-center rounded-full text-white shadow-xl ring-2 ring-background/70 md:size-16 ${cls}`}
         >
           <Icon size={30} weight={weight} />
         </motion.a>
