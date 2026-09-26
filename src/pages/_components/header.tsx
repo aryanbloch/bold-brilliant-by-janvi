@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Menu, ShoppingBasket, User, X } from "lucide-react";
-import { NAV, SITE } from "@/lib/site-config.ts";
+import { NAV } from "@/lib/site-config.ts";
+import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
 import { cn } from "@/lib/utils.ts";
 import { useCart } from "@/hooks/use-cart.tsx";
 import { useProfile } from "@/hooks/use-profile.ts";
@@ -13,6 +14,7 @@ export default function Header() {
   const [showCart, setShowCart] = useState(false);
   const { count } = useCart();
   const { profile, isSignedIn, openProfile } = useProfile();
+  const settings = useSiteSettings();
   const initial = isSignedIn && profile ? profile.fullName.charAt(0).toUpperCase() : null;
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -32,10 +34,10 @@ export default function Header() {
     <header ref={menuRef} className="fixed inset-x-0 top-0 z-40 px-3 pt-3">
       <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/20 bg-black/25 px-4 py-2 text-white backdrop-blur-md">
         <a href="#top" className="flex items-center gap-2.5">
-          <img src={SITE.logo} alt={SITE.brand} className="size-9 rounded-full object-cover ring-1 ring-white/30" />
+          <img src={settings.logoUrl} alt={settings.brand} className="size-9 rounded-full object-cover ring-1 ring-white/30" />
           <span className="font-serif text-xl font-semibold leading-none">
-            {SITE.brand}
-            <span className="block text-[10px] font-sans uppercase tracking-[0.25em] text-white/70">{SITE.byline}</span>
+            {settings.brand}
+            <span className="block text-[10px] font-sans uppercase tracking-[0.25em] text-white/70">{settings.byline}</span>
           </span>
         </a>
         <ul className="hidden gap-6 text-sm lg:gap-7 md:flex">
