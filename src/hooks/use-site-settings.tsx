@@ -18,6 +18,8 @@ export type SiteSettingsValues = {
   instagramUrl: string;
   facebookUrl: string;
   youtubeUrl: string;
+  xUrl: string;
+  telegramUrl: string;
   mapsUrl: string;
   address: string;
   hours: SiteHour[];
@@ -28,6 +30,10 @@ export type SiteSettingsValues = {
   gstin: string;
   showWhatsapp: boolean;
   showInstagram: boolean;
+  showFacebook: boolean;
+  showYoutube: boolean;
+  showX: boolean;
+  showTelegram: boolean;
 };
 
 const DEFAULTS: SiteSettingsValues = {
@@ -42,6 +48,8 @@ const DEFAULTS: SiteSettingsValues = {
   instagramUrl: SITE.instagramUrl,
   facebookUrl: "",
   youtubeUrl: "",
+  xUrl: "",
+  telegramUrl: "",
   mapsUrl: SITE.mapsUrl,
   address: SITE.address,
   hours: [...SITE.hours],
@@ -52,6 +60,10 @@ const DEFAULTS: SiteSettingsValues = {
   gstin: "",
   showWhatsapp: true,
   showInstagram: true,
+  showFacebook: false,
+  showYoutube: false,
+  showX: false,
+  showTelegram: false,
 };
 
 type Row = {
@@ -66,6 +78,8 @@ type Row = {
   instagram_url: string | null;
   facebook_url: string | null;
   youtube_url: string | null;
+  x_url: string | null;
+  telegram_url: string | null;
   maps_url: string | null;
   address: string | null;
   hours: SiteHour[] | null;
@@ -76,6 +90,10 @@ type Row = {
   gstin: string | null;
   show_whatsapp: boolean | null;
   show_instagram: boolean | null;
+  show_facebook: boolean | null;
+  show_youtube: boolean | null;
+  show_x: boolean | null;
+  show_telegram: boolean | null;
 };
 
 function fromRow(r: Row): SiteSettingsValues {
@@ -91,6 +109,8 @@ function fromRow(r: Row): SiteSettingsValues {
     instagramUrl: r.instagram_url ?? DEFAULTS.instagramUrl,
     facebookUrl: r.facebook_url ?? DEFAULTS.facebookUrl,
     youtubeUrl: r.youtube_url ?? DEFAULTS.youtubeUrl,
+    xUrl: r.x_url ?? DEFAULTS.xUrl,
+    telegramUrl: r.telegram_url ?? DEFAULTS.telegramUrl,
     mapsUrl: r.maps_url ?? DEFAULTS.mapsUrl,
     address: r.address ?? DEFAULTS.address,
     hours: r.hours?.length ? r.hours : DEFAULTS.hours,
@@ -102,6 +122,10 @@ function fromRow(r: Row): SiteSettingsValues {
     gstin: r.gstin ?? DEFAULTS.gstin,
     showWhatsapp: r.show_whatsapp ?? true,
     showInstagram: r.show_instagram ?? true,
+    showFacebook: r.show_facebook ?? false,
+    showYoutube: r.show_youtube ?? false,
+    showX: r.show_x ?? false,
+    showTelegram: r.show_telegram ?? false,
   };
 }
 
