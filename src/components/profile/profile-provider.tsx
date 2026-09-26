@@ -55,22 +55,33 @@ export default function ProfileProvider({ children }: { children: ReactNode }) {
     [isSignedIn],
   );
 
-  const saveProfile = async (values: ProfileValues) => {
-    if (!supabase || !userId) throw new Error("Please sign in again.");
-    const { error } = await supabase.from("profiles").upsert(toRow(userId, values));
-    if (error) throw new Error(error.message);
-    setProfile(values);
-  };
+  const saveProfile = useCallback(
+    async (values: ProfileValues) => {
+      if (!supabase || !userId) throw new Error("Please sign in again.");
+      const { error } = await supabase.from("profiles").upsert(toRow(userId, values));
+      if (error) throw new Error(error.message);
+      setProfile(values);
+    },
+    [userId],
+  );
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     await signOut();
     setDialog({ kind: "none" });
     toast.success("Signed out");
-  };
+  }, [signOut]);
 
   const value = useMemo<ProfileContextValue>(
-    () => ({ profile, profileLoading, isSignedIn, isProfileOpen, openProfile }),
-    [profile, profileLoading, isSignedIn, isProfileOpen, openProfile],
+    () => ({
+      profile,
+      profileLoading,
+      isSignedIn,
+      isProfileOpen,
+      openProfile,
+      saveProfile,
+      signOut: () => void handleSignOut(),
+    }),
+    [profile, profileLoading, isSignedIn, isProfileOpen, openProfile, saveProfile, handleSignOut],
   );
 
   return (
