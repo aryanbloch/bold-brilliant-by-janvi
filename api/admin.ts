@@ -1,6 +1,6 @@
 // Single admin endpoint for every simple content table: Shop products, Coupons, Coupon
-// banners, Reviews, Bookings, Site settings (contacts/hours/social toggles), Site content
-// (policy pages) and the Invoice template. Protected by the shared admin password.
+// banners, Reviews, Bookings, Site settings (contacts/hours/social toggles/booking message),
+// Site content (policy pages) and the Invoice template. Protected by the shared admin password.
 // Env vars (Vercel): ADMIN_PASSWORD, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL.
 //
 // Usage from the admin panel:
@@ -66,7 +66,7 @@ const RESOURCES: Record<string, Resource> = {
       "brand", "byline", "logo_url", "founder_photo_url", "whatsapp_number", "phone", "email",
       "instagram_user", "instagram_url", "facebook_url", "youtube_url", "maps_url", "address",
       "hours", "delivery_note", "hero_video_url", "showcase_video_url", "poster_url", "gstin",
-      "show_whatsapp", "show_instagram",
+      "show_whatsapp", "show_instagram", "booking_confirm_message",
     ],
     singleton: true,
   },
