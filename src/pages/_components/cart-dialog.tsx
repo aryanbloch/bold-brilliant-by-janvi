@@ -40,7 +40,7 @@ export default function CartDialog({ open, onClose }: { open: boolean; onClose: 
                 <EmptyDescription>Add your favourite nail sets from the shop.</EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
-                <a href="#shop" onClick={onClose} className="inline-flex rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-105">
+                <a href="/shop" onClick={onClose} className="inline-flex rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-105">
                   Browse Nail Sets
                 </a>
               </EmptyContent>
