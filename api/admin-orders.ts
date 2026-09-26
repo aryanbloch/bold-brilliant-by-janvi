@@ -8,7 +8,7 @@
 //   GET    /api/admin-orders?export=csv             -> CSV file download
 //   PATCH  /api/admin-orders   body: { id, status?, trackingNumber?, courier?, adminNote? }
 // Note: import uses ".js" - Vercel compiles each .ts file to .js, so a ".ts" import crashes at runtime.
-import { checkAdminPassword, dbFetch, getEnv, passwordMismatchHint, q, type ApiRequest, type ApiResponse } from "./_lib/db.js";
+import { checkAdminPassword, dbFetch, getEnv, q, rejectWrongPassword, startOfTodayIstUtc, type ApiRequest, type ApiResponse } from "./_lib/db.js";
 
 type Order = {
   id: string;
@@ -50,7 +50,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return;
   }
   if (!checkAdminPassword(req)) {
-    res.status(401).json({ error: passwordMismatchHint(req) });
+    await rejectWrongPassword(res);
     return;
   }
   const { supabaseUrl, serviceKey } = env;
@@ -58,14 +58,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method === "GET") {
     try {
       if (q(req, "stats") === "1") {
-        const today = new Date();
-        const startOfDayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())).toISOString();
+        // "Today" = since midnight India time (IST), not UTC.
+        const startOfDay = startOfTodayIstUtc();
 
         const [totalRes, todayRes, pendingRes, revenueRes] = await Promise.all([
           dbFetch(supabaseUrl, serviceKey, "orders?select=id", { headers: { Prefer: "count=exact", Range: "0-0" } }),
-          dbFetch(supabaseUrl, serviceKey, `orders?select=id&created_at=gte.${encodeURIComponent(startOfDayUtc)}`, { headers: { Prefer: "count=exact", Range: "0-0" } }),
+          dbFetch(supabaseUrl, serviceKey, `orders?select=id&created_at=gte.${encodeURIComponent(startOfDay)}`, { headers: { Prefer: "count=exact", Range: "0-0" } }),
           dbFetch(supabaseUrl, serviceKey, "orders?select=id&status=in.(Order placed,Processing,Shipped,Out for delivery)", { headers: { Prefer: "count=exact", Range: "0-0" } }),
-          dbFetch(supabaseUrl, serviceKey, `orders?select=amount&status=neq.Cancelled&created_at=gte.${encodeURIComponent(startOfDayUtc)}`),
+          dbFetch(supabaseUrl, serviceKey, `orders?select=amount&status=neq.Cancelled&created_at=gte.${encodeURIComponent(startOfDay)}`),
         ]);
         const count = (r: Response) => parseInt(r.headers.get("content-range")?.split("/")[1] ?? "0", 10) || 0;
         const todaysOrders = (await revenueRes.json()) as { amount: number }[];
@@ -89,13 +89,13 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       const filters: string[] = [];
       if (status && ALLOWED_STATUSES.includes(status)) filters.push(`status=eq.${encodeURIComponent(status)}`);
       if (search) {
-        const term = search.replace(/[%,()]/g, "");
+        const term = encodeURIComponent(search.replace(/[%,()*]/g, ""));
         filters.push(`or=(customer_name.ilike.*${term}*,phone.ilike.*${term}*,product_name.ilike.*${term}*,tracking_number.ilike.*${term}*)`);
       }
       const query = filters.length ? `&${filters.join("&")}` : "";
 
-      const range = isExport ? "" : { headers: { Range: `${offset}-${offset + limit - 1}`, Prefer: "count=exact" } };
-      const r = await dbFetch(supabaseUrl, serviceKey, `orders?select=${SELECT}&order=created_at.desc${query}`, range || undefined);
+      const range = isExport ? undefined : { headers: { Range: `${offset}-${offset + limit - 1}`, Prefer: "count=exact" } };
+      const r = await dbFetch(supabaseUrl, serviceKey, `orders?select=${SELECT}&order=created_at.desc${query}`, range);
       if (!r.ok) {
         res.status(502).json({ error: "Could not load orders." });
         return;
@@ -107,7 +107,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         const lines = [header.join(",")].concat(
           orders.map((o) =>
             [
-              o.id, new Date(o.created_at).toLocaleString("en-IN"), o.customer_name, o.phone, o.product_name,
+              o.id, new Date(o.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }), o.customer_name, o.phone, o.product_name,
               o.amount, o.discount ?? 0, o.coupon_code ?? "", o.status, o.courier ?? "", o.tracking_number ?? "", o.address,
             ]
               .map(csvEscape)

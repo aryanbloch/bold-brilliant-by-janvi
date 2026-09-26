@@ -18,7 +18,8 @@ async function request<T>(password: string, url: string, init?: RequestInit): Pr
     ...init,
     headers: { ...(init?.headers ?? {}), "x-admin-password": password, "Content-Type": "application/json" },
   });
-  const data = (await res.json()) as T;
+  // A too-large upload is rejected by Vercel with a non-JSON page, so don't crash on it.
+  const data = (await res.json().catch(() => ({ error: res.status === 413 ? "Image is too large." : "Something went wrong." }))) as T;
   return { ok: res.ok, status: res.status, data };
 }
 
@@ -26,7 +27,6 @@ export type Resource =
   | "products"
   | "coupons"
   | "promo_banners"
-  | "gallery_images"
   | "reviews"
   | "bookings"
   | "site_settings"
@@ -45,11 +45,38 @@ export const adminApi = {
     request<{ url?: string; error?: string }>(password, "/api/admin-upload", { method: "POST", body: JSON.stringify({ dataUrl, folder }) }),
 };
 
-export function fileToDataUrl(file: File): Promise<string> {
+const MAX_DIMENSION = 1800; // px, plenty for product and banner photos
+const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
+
+function readAsDataUrl(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = () => reject(new Error("Could not read the file."));
     reader.readAsDataURL(file);
   });
+}
+
+// Reads an image and shrinks it in the browser (max 1800px, WebP) so big phone photos
+// fit under the server upload limit. GIFs are kept as-is so animations survive.
+export async function fileToDataUrl(file: File): Promise<string> {
+  if (file.type === "image/gif") {
+    if (file.size > MAX_UPLOAD_BYTES) throw new Error("GIF is too large. Please use a file under 3MB.");
+    return readAsDataUrl(file);
+  }
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  if (!bitmap) return readAsDataUrl(file);
+
+  const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+
+  for (const quality of [0.85, 0.7, 0.55]) {
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", quality));
+    if (blob && blob.size <= MAX_UPLOAD_BYTES) return readAsDataUrl(blob);
+  }
+  throw new Error("Image is too large. Please use a smaller photo.");
 }

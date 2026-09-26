@@ -1,8 +1,10 @@
 // Admin image upload: stores a base64 image into the public "site-media" Supabase Storage
-// bucket and returns its public URL, for product photos, banner images, gallery photos etc.
+// bucket and returns its public URL, for product photos, banner images etc.
 // Protected by the shared admin password. Env vars: ADMIN_PASSWORD, SUPABASE_SERVICE_ROLE_KEY,
 // SUPABASE_URL.
-import { checkAdminPassword, getEnv, type ApiRequest, type ApiResponse } from "./_lib/db.js";
+// Vercel rejects request bodies above ~4.5MB, and base64 adds ~33%, so the admin panel
+// compresses photos in the browser before sending. The server limit below matches that.
+import { checkAdminPassword, getEnv, rejectWrongPassword, type ApiRequest, type ApiResponse } from "./_lib/db.js";
 
 const MIME_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -11,7 +13,7 @@ const MIME_EXT: Record<string, string> = {
   "image/gif": "gif",
   "image/avif": "avif",
 };
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = 3 * 1024 * 1024;
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== "POST") {
@@ -24,7 +26,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return;
   }
   if (!checkAdminPassword(req)) {
-    res.status(401).json({ error: "Incorrect admin password" });
+    await rejectWrongPassword(res);
     return;
   }
 
@@ -42,7 +44,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
   const buffer = Buffer.from(match[2], "base64");
   if (buffer.length > MAX_BYTES) {
-    res.status(400).json({ error: "Image is too large. Please use a file under 5MB." });
+    res.status(400).json({ error: "Image is too large. Please use a file under 3MB." });
     return;
   }
 
