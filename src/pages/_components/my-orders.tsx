@@ -64,7 +64,7 @@ export default function MyOrders() {
   if (!isSupabaseConfigured) return null;
 
   return (
-    <section id="my-orders" className="px-5 py-16 md:py-24">
+    <section className="px-5 py-16 md:py-24">
       <div className="mx-auto max-w-3xl">
         <SectionHeading eyebrow="My Account" title="My Orders" sub="See your order status, live delivery journey and invoice here, automatically." />
 
