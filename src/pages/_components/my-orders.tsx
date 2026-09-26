@@ -1,8 +1,8 @@
-// Shows the customer's own past orders, their status, and live courier shipment journey - no typing needed.
-// Reads orders directly from Supabase (RLS-protected), then fetches live tracking from /api/track-shipment
-// which auto-detects whether the courier is Delhivery or Shiprocket.
+// Shows the customer's own past orders, their status, live courier shipment journey, and lets
+// them download their invoice - no typing needed. Reads orders directly from Supabase
+// (RLS-protected), then fetches live tracking from /api/track-shipment by order id.
 import { useEffect, useState } from "react";
-import { LogIn, PackageSearch, Truck } from "lucide-react";
+import { Download, LogIn, PackageSearch, Truck } from "lucide-react";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty.tsx";
@@ -37,12 +37,20 @@ export default function MyOrders() {
       .then(({ data }) => setOrders((data as Order[] | null) ?? []));
   }, [user]);
 
+  const downloadInvoice = async (orderId: string) => {
+    if (!supabase) return;
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return;
+    window.open(`/api/invoice?orderId=${encodeURIComponent(orderId)}&token=${encodeURIComponent(token)}&print=1`, "_blank", "noopener");
+  };
+
   if (!isSupabaseConfigured) return null;
 
   return (
     <section id="my-orders" className="px-5 py-16 md:py-24">
       <div className="mx-auto max-w-3xl">
-        <SectionHeading eyebrow="My Account" title="My Orders" sub="See your order status and live delivery journey here, automatically." />
+        <SectionHeading eyebrow="My Account" title="My Orders" sub="See your order status, live delivery journey and invoice here, automatically." />
 
         <Reveal>
           {loading ? (
@@ -89,11 +97,21 @@ export default function MyOrders() {
                         ₹{o.amount} · {new Date(o.created_at).toLocaleDateString("en-IN", { dateStyle: "medium" })}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-                      <Truck className="size-4" /> {o.status}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
+                        <Truck className="size-4" /> {o.status}
+                      </div>
+                      <button
+                        onClick={() => void downloadInvoice(o.id)}
+                        title="Download invoice"
+                        aria-label="Download invoice"
+                        className="grid size-9 shrink-0 place-items-center rounded-full border bg-background transition-colors hover:bg-secondary"
+                      >
+                        <Download className="size-4" />
+                      </button>
                     </div>
                   </div>
-                  {o.tracking_number && <ShipmentJourney trackingNumber={o.tracking_number} />}
+                  {o.tracking_number && <ShipmentJourney orderId={o.id} />}
                 </div>
               ))}
             </div>
