@@ -1,17 +1,18 @@
 import { InstagramLogo, WhatsappLogo } from "@phosphor-icons/react";
-import { SITE, whatsappLink } from "@/lib/site-config.ts";
+import { useSiteSettings, whatsappLinkFor } from "@/hooks/use-site-settings.tsx";
 import { cn } from "@/lib/utils.ts";
-
-const LINKS = [
-  { label: "WhatsApp", href: whatsappLink(), Icon: WhatsappLogo, weight: "fill", cls: "bg-[#25D366]" },
-  { label: "Instagram", href: SITE.instagramUrl, Icon: InstagramLogo, weight: "bold", cls: "bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600" },
-] as const;
 
 // Logo-only round buttons, shown side by side.
 export default function SocialButtons({ className }: { className?: string }) {
+  const settings = useSiteSettings();
+  const links = [
+    { label: "WhatsApp", href: whatsappLinkFor(settings.whatsappNumber), Icon: WhatsappLogo, weight: "fill" as const, cls: "bg-[#25D366]" },
+    { label: "Instagram", href: settings.instagramUrl, Icon: InstagramLogo, weight: "bold" as const, cls: "bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600" },
+  ];
+
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      {LINKS.map(({ label, href, Icon, weight, cls }) => (
+      {links.map(({ label, href, Icon, weight, cls }) => (
         <a
           key={label}
           href={href}
