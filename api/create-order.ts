@@ -3,7 +3,7 @@
 // from the admin panel and customers are always charged exactly that price.
 // Env vars (Vercel): RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, SUPABASE_SERVICE_ROLE_KEY,
 // and SUPABASE_URL (falls back to VITE_SUPABASE_URL).
-import { dbFetch, getEnv, getUserId, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
+import { dbFetch, getEnv, getUserId, type ApiRequest, type ApiResponse } from "./_lib/db.js";
 
 const MAX_QTY = 20;
 
