@@ -3,7 +3,7 @@
 // Send) and/or an email (uses the "Booking accepted/declined" template in Admin > Emails).
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CalendarClock, Check, Mail, Save, X } from "lucide-react";
+import { CalendarClock, Check, Mail, MapPin, Save, X } from "lucide-react";
 import { WhatsappLogo } from "@phosphor-icons/react";
 import { adminApi } from "./api.ts";
 import { AdminButton, AdminCard, EmptyRow, FIELD, LABEL, Spinner } from "./ui.tsx";
@@ -20,6 +20,8 @@ type Booking = {
   message: string | null;
   status: "New" | "Confirmed" | "Completed" | "Cancelled";
   created_at: string;
+  location_type: "studio" | "home";
+  location_address: string | null;
 };
 
 const STATUSES: Booking["status"][] = ["New", "Confirmed", "Completed", "Cancelled"];
@@ -132,6 +134,10 @@ export default function BookingsTab({ password }: { password: string }) {
                     {b.email && <p className="text-sm text-muted-foreground">{b.email}</p>}
                     <p className="text-sm text-muted-foreground">
                       {b.service} · {formatDate(b.preferred_date)} at {formatTime(b.preferred_time)}
+                    </p>
+                    <p className="flex items-start gap-1 pt-1 text-sm text-muted-foreground">
+                      <MapPin className="mt-0.5 size-3.5 shrink-0" />
+                      {b.location_type === "home" ? `Home visit - ${b.location_address ?? "-"}` : "At the studio"}
                     </p>
                     {b.message && <p className="pt-1 text-sm text-muted-foreground">{b.message}</p>}
                     <p className="pt-1 text-xs text-muted-foreground">Requested {new Date(b.created_at).toLocaleString("en-IN")}</p>
