@@ -2,8 +2,11 @@ import { Clock, MapPin, Navigation } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion.tsx";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
 import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
+import { useSiteContent, useSiteContentList } from "@/hooks/use-site-content.ts";
 
-const FAQS = [
+type Faq = { q: string; a: string };
+
+const DEFAULT_FAQS: Faq[] = [
   { q: "Where is the best nail art studio in Rajkot?", a: "Bold & Brilliant by Janvi Sarang is at Astha Chowk, Railnagar, Rajkot - 360001. Girls and women visit us from all over Rajkot and Gujarat for bridal nails, extensions and custom nail art." },
   { q: "How long does a nail art appointment take?", a: "Most sets take 1 to 2 hours. Bridal and detailed 3D designs can take up to 3 hours." },
   { q: "How long will my nail art last?", a: "Gel and extensions usually last 3 to 4 weeks with proper care." },
@@ -14,6 +17,9 @@ const FAQS = [
 
 export default function FaqContact() {
   const settings = useSiteSettings();
+  const content = useSiteContent();
+  const faqsFromAdmin = useSiteContentList<Faq>(content, "faq");
+  const faqs = faqsFromAdmin?.length ? faqsFromAdmin : DEFAULT_FAQS;
 
   return (
     <>
@@ -22,8 +28,8 @@ export default function FaqContact() {
           <SectionHeading eyebrow="FAQ" title="Frequently Asked Questions" />
           <Reveal>
             <Accordion type="single" collapsible className="rounded-3xl border bg-card px-6">
-              {FAQS.map((f) => (
-                <AccordionItem key={f.q} value={f.q}>
+              {faqs.map((f, i) => (
+                <AccordionItem key={`${f.q}-${i}`} value={`${f.q}-${i}`}>
                   <AccordionTrigger className="text-left text-base">{f.q}</AccordionTrigger>
                   <AccordionContent className="text-muted-foreground">{f.a}</AccordionContent>
                 </AccordionItem>
