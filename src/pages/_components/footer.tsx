@@ -61,11 +61,11 @@ export default function Footer() {
   return (
     <footer className="border-t bg-secondary/40 px-5 pb-6 pt-12">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-start gap-3">
-          <img src={SITE.logo} alt={SITE.brand} className="size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
+        <div className="flex items-center gap-3">
+          <img src={SITE.logo} alt={SITE.brand} className="size-12 shrink-0 self-start rounded-full object-cover ring-1 ring-border" />
           <div>
-            <p className="font-serif text-2xl font-semibold">{SITE.brand}</p>
-            <p className="text-sm text-muted-foreground">{SITE.byline} · Nail Art Studio, Rajkot, Gujarat</p>
+            <p className="font-serif text-2xl font-semibold leading-tight">{SITE.brand}</p>
+            <p className="text-sm leading-snug text-muted-foreground">{SITE.byline} · Nail Art Studio, Rajkot, Gujarat 360001</p>
             <SocialButtons className="pt-4" />
           </div>
         </div>
