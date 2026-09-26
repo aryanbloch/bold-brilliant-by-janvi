@@ -30,14 +30,30 @@ function unquote(s: string): string {
   return s.replace(/^["'\u201c\u201d\u2018\u2019]+/, "").replace(/["'\u201c\u201d\u2018\u2019]+$/, "");
 }
 
+function expectedPassword(): string | undefined {
+  return process.env.ADMIN_PASSWORD ? unquote(process.env.ADMIN_PASSWORD.trim()) : undefined;
+}
+
+function providedPassword(req: ApiRequest): string | undefined {
+  const raw = header(req, "x-admin-password");
+  return raw ? unquote(raw.trim()) : undefined;
+}
+
 // Shared admin password check, used by every admin-only endpoint (api/admin.ts, upload-image.ts).
 // Trimmed and unquoted on both sides: a stray trailing space, newline, or wrapping quote pasted
 // into the Vercel dashboard (or into the login box) is a common, invisible cause of "incorrect
 // password".
 export function checkAdminPassword(req: ApiRequest): boolean {
-  const expected = process.env.ADMIN_PASSWORD ? unquote(process.env.ADMIN_PASSWORD.trim()) : undefined;
-  const provided = header(req, "x-admin-password") ? unquote(header(req, "x-admin-password")!.trim()) : undefined;
-  return Boolean(expected) && provided === expected;
+  const expected = expectedPassword();
+  return Boolean(expected) && providedPassword(req) === expected;
+}
+
+// TEMPORARY debugging aid: reveals only character counts (never the password) so the owner can
+// spot a mismatch between the Vercel value and what they type. Remove once login works.
+export function passwordMismatchHint(req: ApiRequest): string {
+  const expected = expectedPassword() ?? "";
+  const provided = providedPassword(req) ?? "";
+  return `Incorrect admin password (server password: ${expected.length} characters, you typed: ${provided.length} characters)`;
 }
 
 export function getEnv(): { supabaseUrl: string; serviceKey: string } | null {
