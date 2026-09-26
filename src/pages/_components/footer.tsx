@@ -5,8 +5,8 @@ import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
 import { useSiteContent } from "@/hooks/use-site-content.ts";
 
 // Same nav items as the header, styled the same way (rounded pill links), so the footer mirrors
-// the header. My Orders stays in the header menu only.
-const FOOTER_NAV = NAV.filter((n) => n.href !== "/#my-orders");
+// the header. My Orders stays in the header menu / bottom nav only, not duplicated here.
+const FOOTER_NAV = NAV.filter((n) => n.href !== "/orders");
 
 const DEFAULT_POLICIES: Record<string, { title: string; points: string[] }> = {
   privacy_policy: {
