@@ -1,10 +1,9 @@
 // Auto-scrolling nail art showcase: three rows that scroll on their own (no swiping needed),
 // row 1 moves right-to-left, row 2 left-to-right, row 3 right-to-left again - matching the
-// reference video. Each row's image list is duplicated so the loop is seamless.
+// reference video. Each row's image list is duplicated so the loop is seamless. Photos come
+// from the admin-managed gallery table (falls back to defaults while loading).
 import { motion } from "motion/react";
-import { GALLERY } from "@/lib/gallery.ts";
-
-type GalleryImage = (typeof GALLERY)[number];
+import { useGalleryImages, type GalleryImage } from "@/hooks/use-gallery-images.ts";
 
 function MarqueeRow({ images, reverse, duration }: { images: GalleryImage[]; reverse: boolean; duration: number }) {
   const loop = [...images, ...images];
@@ -16,8 +15,8 @@ function MarqueeRow({ images, reverse, duration }: { images: GalleryImage[]; rev
         transition={{ duration, ease: "linear", repeat: Infinity }}
       >
         {loop.map((g, i) => (
-          <div key={`${g.name}-${i}`} className="relative h-40 w-28 shrink-0 overflow-hidden rounded-2xl sm:h-52 sm:w-36 md:h-64 md:w-48">
-            <img src={g.url} alt={`${g.name} nail art in Rajkot`} loading="lazy" className="h-full w-full object-cover" />
+          <div key={`${g.id}-${i}`} className="relative h-40 w-28 shrink-0 overflow-hidden rounded-2xl sm:h-52 sm:w-36 md:h-64 md:w-48">
+            <img src={g.url} alt={g.caption ?? "Nail art"} loading="lazy" className="h-full w-full object-cover" />
           </div>
         ))}
       </motion.div>
@@ -26,16 +25,19 @@ function MarqueeRow({ images, reverse, duration }: { images: GalleryImage[]; rev
 }
 
 export default function Gallery() {
-  const row1 = GALLERY.slice(0, 3);
-  const row2 = GALLERY.slice(3, 6);
-  const row3 = [...GALLERY.slice(6, 8), GALLERY[0], GALLERY[1]];
+  const images = useGalleryImages();
+  if (images.length === 0) return null;
+
+  const row1 = images.slice(0, 3);
+  const row2 = images.slice(3, 6);
+  const row3 = images.length > 6 ? [...images.slice(6, 8), images[0], images[1]] : images.slice(0, 4);
 
   return (
     <section id="work" className="overflow-hidden px-5 py-10 md:py-16">
       <div className="flex flex-col gap-4">
         <MarqueeRow images={row1} reverse={false} duration={22} />
-        <MarqueeRow images={row2} reverse={true} duration={26} />
-        <MarqueeRow images={row3} reverse={false} duration={24} />
+        {row2.length > 0 && <MarqueeRow images={row2} reverse={true} duration={26} />}
+        {row3.length > 0 && <MarqueeRow images={row3} reverse={false} duration={24} />}
       </div>
     </section>
   );
