@@ -2,24 +2,33 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CalendarCheck, CheckCircle2 } from "lucide-react";
+import { CalendarCheck, CheckCircle2, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
 import { toast } from "sonner";
+import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
 
 const SERVICES = ["Classic Nail Art", "French Nails", "3D Nail Art", "Bridal Nails", "Luxury Nail Art", "Custom Design"] as const;
+const LOCATION_TYPES = ["studio", "home"] as const;
 
-const schema = z.object({
-  name: z.string().trim().min(2, "Please enter your name"),
-  phone: z.string().trim().regex(/^\+?[0-9\s-]{10,15}$/, "Enter a valid WhatsApp number"),
-  email: z.union([z.literal(""), z.string().trim().email("Enter a valid email")]).optional(),
-  date: z.string().min(1, "Choose a date"),
-  time: z.string().min(1, "Choose a time"),
-  service: z.enum(SERVICES, { message: "Select a service" }),
-  message: z.string().max(500).optional(),
-});
+const schema = z
+  .object({
+    name: z.string().trim().min(2, "Please enter your name"),
+    phone: z.string().trim().regex(/^\+?[0-9\s-]{10,15}$/, "Enter a valid WhatsApp number"),
+    email: z.union([z.literal(""), z.string().trim().email("Enter a valid email")]).optional(),
+    date: z.string().min(1, "Choose a date"),
+    time: z.string().min(1, "Choose a time"),
+    service: z.enum(SERVICES, { message: "Select a service" }),
+    message: z.string().max(500).optional(),
+    locationType: z.enum(LOCATION_TYPES, { message: "Select a location" }),
+    locationAddress: z.string().trim().max(300).optional(),
+  })
+  .refine((d) => d.locationType !== "home" || (d.locationAddress?.trim().length ?? 0) >= 5, {
+    message: "Please enter your address for a home visit",
+    path: ["locationAddress"],
+  });
 type FormValues = z.infer<typeof schema>;
 type Confirmed = FormValues & { bookingNumber: number };
 
@@ -28,7 +37,7 @@ const FIELD = "h-12 rounded-xl bg-background/70";
 const formatDate = (d: string) => new Date(`${d}T00:00`).toLocaleDateString("en-IN", { dateStyle: "medium" });
 const formatTime = (t: string) => new Date(`1970-01-01T${t}`).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
 
-function BookingSummary({ booking, onDone }: { booking: Confirmed; onDone: () => void }) {
+function BookingSummary({ booking, studioAddress, onDone }: { booking: Confirmed; studioAddress: string; onDone: () => void }) {
   const rows = [
     { label: "Booking No.", value: `#${booking.bookingNumber}` },
     { label: "Name", value: booking.name },
@@ -37,6 +46,7 @@ function BookingSummary({ booking, onDone }: { booking: Confirmed; onDone: () =>
     { label: "Service", value: booking.service },
     { label: "Date", value: formatDate(booking.date) },
     { label: "Time", value: formatTime(booking.time) },
+    { label: "Location", value: booking.locationType === "home" ? `Home visit - ${booking.locationAddress?.trim()}` : `At our studio - ${studioAddress}` },
     { label: "Message", value: booking.message?.trim() || "-" },
   ];
   return (
@@ -63,15 +73,28 @@ function BookingSummary({ booking, onDone }: { booking: Confirmed; onDone: () =>
 
 export default function Booking() {
   const today = new Date().toISOString().slice(0, 10);
+  const settings = useSiteSettings();
   const [confirmed, setConfirmed] = useState<Confirmed | null>(null);
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { locationType: "studio" } });
+  const locationType = watch("locationType");
 
   // Booking goes to /api/booking, which saves it to Admin > Bookings and emails the owner.
   const onSubmit = async (d: FormValues) => {
     const res = await fetch("/api/booking", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...d, email: d.email?.trim() || undefined, message: d.message ?? "" }),
+      body: JSON.stringify({
+        ...d,
+        email: d.email?.trim() || undefined,
+        message: d.message ?? "",
+        locationAddress: d.locationType === "home" ? d.locationAddress?.trim() : undefined,
+      }),
     }).catch(() => null);
     const data = (await res?.json().catch(() => ({}))) as { bookingNumber?: number; error?: string } | undefined;
     if (!res?.ok || typeof data?.bookingNumber !== "number") {
@@ -92,7 +115,7 @@ export default function Booking() {
         <SectionHeading eyebrow="Appointments" title="Book Your Nail Appointment" sub="Fill in your details and we'll confirm your slot on WhatsApp." />
         <Reveal>
           {confirmed ? (
-            <BookingSummary booking={confirmed} onDone={() => setConfirmed(null)} />
+            <BookingSummary booking={confirmed} studioAddress={settings.address} onDone={() => setConfirmed(null)} />
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} noValidate className="grid gap-5 rounded-[2rem] border bg-card/60 p-6 shadow-2xl shadow-primary/10 backdrop-blur-sm sm:grid-cols-2 md:p-10">
               <div>
@@ -128,6 +151,37 @@ export default function Booking() {
                 </select>
                 {err("service")}
               </div>
+              <div className="sm:col-span-2">
+                <Label className="pb-2">Where should we do your nails?</Label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label
+                    className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition-colors ${locationType === "studio" ? "border-primary bg-primary/5" : "border-input bg-background/70"}`}
+                  >
+                    <input type="radio" value="studio" className="mt-1 accent-primary" {...register("locationType")} />
+                    <span>
+                      <span className="flex items-center gap-1.5 font-medium"><MapPin className="size-4 text-primary" /> At Our Studio</span>
+                      <span className="block pt-1 text-xs text-muted-foreground">{settings.address}</span>
+                    </span>
+                  </label>
+                  <label
+                    className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition-colors ${locationType === "home" ? "border-primary bg-primary/5" : "border-input bg-background/70"}`}
+                  >
+                    <input type="radio" value="home" className="mt-1 accent-primary" {...register("locationType")} />
+                    <span>
+                      <span className="flex items-center gap-1.5 font-medium"><MapPin className="size-4 text-primary" /> At My Own Location</span>
+                      <span className="block pt-1 text-xs text-muted-foreground">We'll come to your home or venue</span>
+                    </span>
+                  </label>
+                </div>
+                {err("locationType")}
+              </div>
+              {locationType === "home" && (
+                <div className="sm:col-span-2">
+                  <Label htmlFor="locationAddress" className="pb-2">Your Address</Label>
+                  <Textarea id="locationAddress" rows={2} placeholder="House/Flat no., street, area, landmark, city" className="rounded-xl bg-background/70" {...register("locationAddress")} />
+                  {err("locationAddress")}
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <Label htmlFor="message" className="pb-2">Message (optional)</Label>
                 <Textarea id="message" rows={3} placeholder="Any design ideas or reference?" className="rounded-xl bg-background/70" {...register("message")} />
