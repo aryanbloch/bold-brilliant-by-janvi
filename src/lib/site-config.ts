@@ -6,7 +6,7 @@ export const SITE = {
   logo: "/logo.jpg",
   founderPhoto: "https://hercules-cdn.com/file_Do0YX4VPKpj36aoO4e7QA7gl",
   // Replace with the real number incl. country code, digits only (e.g. "919876543210")
-  whatsappNumber: "YOUR_WHATSAPP_NUMBER",
+  whatsappNumber: "919737822142",
   instagramUser: "bold__and__brilliant",
   instagramUrl: "https://www.instagram.com/bold__and__brilliant",
   mapsUrl: "https://maps.app.goo.gl/jpdYwRzNMrp4Sxzm8",
