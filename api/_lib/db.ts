@@ -25,9 +25,12 @@ function header(req: ApiRequest, key: string): string | undefined {
 }
 
 // Shared admin password check, used by every admin-only endpoint (api/admin.ts, upload-image.ts).
+// Trimmed on both sides: a stray trailing space or newline pasted into the Vercel dashboard
+// (or into the login box) is a common, invisible cause of "incorrect password".
 export function checkAdminPassword(req: ApiRequest): boolean {
-  const expected = process.env.ADMIN_PASSWORD;
-  return Boolean(expected) && header(req, "x-admin-password") === expected;
+  const expected = process.env.ADMIN_PASSWORD?.trim();
+  const provided = header(req, "x-admin-password")?.trim();
+  return Boolean(expected) && provided === expected;
 }
 
 export function getEnv(): { supabaseUrl: string; serviceKey: string } | null {
