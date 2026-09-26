@@ -15,7 +15,7 @@ export default function CartDialog({ open, onClose }: { open: boolean; onClose: 
 
   const startCheckout = () => {
     setCheckout({
-      items: items.map((i) => ({ name: i.name, qty: i.qty })),
+      items: items.map((i) => ({ name: i.name, qty: i.qty, price: i.price, img: i.img })),
       title: items.map((i) => (i.qty > 1 ? `${i.name} x${i.qty}` : i.name)).join(", "),
       total,
     });
