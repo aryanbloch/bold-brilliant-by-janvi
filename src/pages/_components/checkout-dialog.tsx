@@ -40,7 +40,7 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [paidAmount, setPaidAmount] = useState<number | null>(null);
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [savedOrderId, setSavedOrderId] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   // Once the auth state has finished loading, prompt sign in if the customer isn't signed in yet.
@@ -104,7 +104,7 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
 
   const verifyAndFinish = async (response: RazorpayResponse, token: string) => {
     try {
-      const { ok, data } = await postJson<{ verified?: boolean; error?: string }>("/api/verify-payment", token, {
+      const { ok, data } = await postJson<{ verified?: boolean; orderId?: string; error?: string }>("/api/verify-payment", token, {
         orderId: response.razorpay_order_id,
         paymentId: response.razorpay_payment_id,
         signature: response.razorpay_signature,
@@ -112,6 +112,7 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
       if (!ok || !data.verified) {
         throw new Error(`${data.error ?? "Payment could not be verified."} (Payment ID: ${response.razorpay_payment_id})`);
       }
+      setSavedOrderId(data.orderId ?? null);
       setStep("success");
       onSuccess?.();
       toast.success("Payment successful!");
@@ -122,8 +123,8 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
   };
 
   const downloadInvoice = () => {
-    if (!accessToken) return;
-    window.open(`/api/invoice?orderId=${encodeURIComponent(orderId ?? "")}&token=${encodeURIComponent(accessToken)}&print=1`, "_blank", "noopener");
+    if (!accessToken || !savedOrderId) return;
+    window.open(`/api/invoice?orderId=${encodeURIComponent(savedOrderId)}&token=${encodeURIComponent(accessToken)}&print=1`, "_blank", "noopener");
   };
 
   return (
@@ -138,9 +139,11 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
                 Your payment of ₹{paidAmount ?? order.total} for {order.title} was successful. You can see your order status and download your invoice anytime in the "My Orders" section.
               </p>
               <div className="flex gap-2 pt-1">
-                <button onClick={downloadInvoice} className="inline-flex items-center gap-2 rounded-full border bg-secondary px-5 py-2.5 text-sm font-medium transition-colors hover:bg-secondary/70">
-                  <Download className="size-4" /> Invoice
-                </button>
+                {savedOrderId && (
+                  <button onClick={downloadInvoice} className="inline-flex items-center gap-2 rounded-full border bg-secondary px-5 py-2.5 text-sm font-medium transition-colors hover:bg-secondary/70">
+                    <Download className="size-4" /> Invoice
+                  </button>
+                )}
                 <button onClick={onClose} className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]">
                   Done
                 </button>
@@ -192,10 +195,7 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
 
                 {error && <p className="break-words text-sm text-destructive">{error}</p>}
                 <button
-                  onClick={() => {
-                    void pay();
-                    setOrderId(null);
-                  }}
+                  onClick={() => void pay()}
                   disabled={!profile || step === "paying"}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary font-medium text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
                 >
