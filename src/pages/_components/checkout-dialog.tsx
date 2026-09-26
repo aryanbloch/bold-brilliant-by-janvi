@@ -128,7 +128,7 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
               <CheckCircle2 className="size-14 text-emerald-500" />
               <DialogTitle className="font-serif text-2xl">Order Confirmed!</DialogTitle>
               <p className="text-sm text-muted-foreground">
-                Your payment of \u20b9{paidAmount ?? order.total} for {order.title} was successful. You can see your order status anytime in the "My Orders" section.
+                Your payment of ₹{paidAmount ?? order.total} for {order.title} was successful. You can see your order status anytime in the "My Orders" section.
               </p>
               <button onClick={onClose} className="mt-2 inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]">
                 Done
@@ -141,10 +141,10 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
                 {order.title} ·{" "}
                 {coupon ? (
                   <>
-                    <span className="line-through">\u20b9{order.total}</span> <span className="font-medium text-primary">\u20b9{previewTotal}</span>
+                    <span className="line-through">₹{order.total}</span> <span className="font-medium text-primary">₹{previewTotal}</span>
                   </>
                 ) : (
-                  <span className="font-medium text-primary">\u20b9{order.total}</span>
+                  <span className="font-medium text-primary">₹{order.total}</span>
                 )}
               </p>
               <div className="grid gap-4 pt-2">
@@ -199,7 +199,7 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
                       <Loader2 className="size-4 animate-spin" /> Opening payment...
                     </>
                   ) : (
-                    `Pay \u20b9${previewTotal}`
+                    `Pay ₹${previewTotal}`
                   )}
                 </button>
                 <p className="text-center text-xs text-muted-foreground">Secure payment powered by Razorpay. Free delivery all over India.</p>

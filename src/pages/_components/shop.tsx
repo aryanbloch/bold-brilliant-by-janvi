@@ -9,9 +9,9 @@ import { useCart } from "@/hooks/use-cart.tsx";
 import CheckoutDialog from "./checkout-dialog.tsx";
 
 const CUSTOM_SETS = [
-  { name: "Custom Everyday Set", price: "Starts at \u20b9699", desc: "Your choice of shape, length and 1-2 colours." },
-  { name: "Custom 3D / Charm Set", price: "Starts at \u20b91,299", desc: "Hand-placed charms, chrome, or 3D detailing." },
-  { name: "Custom Bridal Set", price: "Starts at \u20b91,999", desc: "Fully personalised bridal design with trial option." },
+  { name: "Custom Everyday Set", price: "Starts at ₹699", desc: "Your choice of shape, length and 1-2 colours." },
+  { name: "Custom 3D / Charm Set", price: "Starts at ₹1,299", desc: "Hand-placed charms, chrome, or 3D detailing." },
+  { name: "Custom Bridal Set", price: "Starts at ₹1,999", desc: "Fully personalised bridal design with trial option." },
 ];
 
 type ReadySet = (typeof READY_SETS)[number];
@@ -68,7 +68,7 @@ export default function Shop() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-serif text-lg leading-tight">{s.name}</h3>
-                    <p className="pt-1 text-sm font-medium text-primary">\u20b9{s.price}</p>
+                    <p className="pt-1 text-sm font-medium text-primary">₹{s.price}</p>
                     <div className="mt-3 flex gap-2">
                       <button
                         onClick={() => buyNow(s)}

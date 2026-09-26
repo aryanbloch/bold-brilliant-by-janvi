@@ -85,7 +85,7 @@ function OrderRow({ order, saving, onSave }: { order: Order; saving: boolean; on
         <div className="min-w-0">
           <p className="font-serif text-lg">{order.product_name}</p>
           <p className="text-sm text-muted-foreground">
-            {order.customer_name} · {order.phone} · \u20b9{order.amount}
+            {order.customer_name} · {order.phone} · ₹{order.amount}
           </p>
           <p className="max-w-md whitespace-pre-line pt-1 text-xs text-muted-foreground">{order.address}</p>
           <p className="pt-1 text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString("en-IN")}</p>
