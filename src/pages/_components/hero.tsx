@@ -1,7 +1,8 @@
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import AmbientVideo from "@/components/ambient-video.tsx";
-import { SITE } from "@/lib/site-config.ts";
+import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
+import PromoBanner from "./promo-banner.tsx";
 
 // 3D-inspired glossy nail shapes (pure CSS gradients, no 3D library)
 const NAILS = [
@@ -14,10 +15,11 @@ const SPARKS = Array.from({ length: 8 }, (_, i) => ({ left: `${(i * 37) % 100}%`
 
 export default function Hero() {
   const reduce = useReducedMotion();
+  const settings = useSiteSettings();
   const ease = [0.22, 1, 0.36, 1] as const;
   return (
     <section id="top" className="relative flex min-h-[100svh] items-center justify-center overflow-hidden bg-[#2a0f1c] text-white">
-      <AmbientVideo src={SITE.videos.hero} poster={SITE.poster} className="absolute inset-0 h-full w-full object-cover" />
+      <AmbientVideo src={settings.heroVideoUrl} poster={settings.posterUrl} className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-[#3a0d24]/20 to-[#1a0710]/80" />
       <div className="absolute -left-40 top-1/3 h-96 w-96 rounded-full bg-pink-500/30 blur-[80px]" />
       <div className="absolute -right-40 bottom-10 h-96 w-96 rounded-full bg-amber-400/20 blur-[80px]" />
@@ -95,6 +97,7 @@ export default function Hero() {
             Shop Nail Sets
           </a>
         </motion.div>
+        <PromoBanner placement="hero" className="mx-auto mt-8 max-w-xl" />
       </div>
     </section>
   );
