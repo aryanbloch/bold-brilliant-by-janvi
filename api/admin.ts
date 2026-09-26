@@ -1,6 +1,6 @@
 // Single admin endpoint for every simple content table: Shop products, Coupons, Coupon
-// banners, Gallery, Reviews, Bookings, Site settings (contacts/hours), Site content (policy
-// pages) and the Invoice template. Protected by the shared admin password (x-admin-password).
+// banners, Reviews, Bookings, Site settings (contacts/hours/social toggles), Site content
+// (policy pages) and the Invoice template. Protected by the shared admin password.
 // Env vars (Vercel): ADMIN_PASSWORD, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL.
 //
 // Usage from the admin panel:
@@ -48,13 +48,6 @@ const RESOURCES: Record<string, Resource> = {
     allowInsert: true,
     allowDelete: true,
   },
-  gallery_images: {
-    table: "gallery_images",
-    order: "sort_order.asc",
-    writable: ["image_url", "caption", "is_active", "sort_order"],
-    allowInsert: true,
-    allowDelete: true,
-  },
   reviews: {
     table: "reviews",
     order: "sort_order.asc",
@@ -73,6 +66,7 @@ const RESOURCES: Record<string, Resource> = {
       "brand", "byline", "logo_url", "founder_photo_url", "whatsapp_number", "phone", "email",
       "instagram_user", "instagram_url", "facebook_url", "youtube_url", "maps_url", "address",
       "hours", "delivery_note", "hero_video_url", "showcase_video_url", "poster_url", "gstin",
+      "show_whatsapp", "show_instagram",
     ],
     singleton: true,
   },
