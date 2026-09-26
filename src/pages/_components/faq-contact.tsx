@@ -1,7 +1,7 @@
 import { Clock, MapPin, Navigation } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion.tsx";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
-import { SITE } from "@/lib/site-config.ts";
+import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
 
 const FAQS = [
   { q: "Where is the best nail art studio in Rajkot?", a: "Bold & Brilliant by Janvi Sarang is at Astha Chowk, Railnagar, Rajkot - 360001. Girls and women visit us from all over Rajkot and Gujarat for bridal nails, extensions and custom nail art." },
@@ -13,6 +13,8 @@ const FAQS = [
 ];
 
 export default function FaqContact() {
+  const settings = useSiteSettings();
+
   return (
     <>
       <section id="faq" className="px-5 py-16 md:py-20">
@@ -41,21 +43,21 @@ export default function FaqContact() {
                   <MapPin className="mt-1 size-6 shrink-0" />
                   <div>
                     <h3 className="font-serif text-2xl">Studio Location</h3>
-                    <address className="not-italic opacity-85">{SITE.address}</address>
+                    <address className="not-italic opacity-85">{settings.address}</address>
                   </div>
                 </div>
                 <div className="flex gap-4">
                   <Clock className="mt-1 size-6 shrink-0" />
                   <div>
                     <h3 className="font-serif text-2xl">Opening Hours</h3>
-                    {SITE.hours.map((h) => (
+                    {settings.hours.map((h) => (
                       <p key={h.day} className="opacity-85">{h.day}: {h.time}</p>
                     ))}
                   </div>
                 </div>
               </div>
               <div className="flex flex-col justify-center gap-4 md:items-end">
-                <a href={SITE.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 font-medium text-[#7a1f4a] transition-transform hover:scale-105">
+                <a href={settings.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 font-medium text-[#7a1f4a] transition-transform hover:scale-105">
                   <Navigation className="size-4" /> Open in Google Maps
                 </a>
               </div>
