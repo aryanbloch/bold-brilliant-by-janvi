@@ -2,7 +2,6 @@
 // row 1 moves right-to-left, row 2 left-to-right, row 3 right-to-left again - matching the
 // reference video. Each row's image list is duplicated so the loop is seamless.
 import { motion } from "motion/react";
-import { SectionHeading } from "@/components/reveal.tsx";
 import { GALLERY } from "@/lib/gallery.ts";
 
 type GalleryImage = (typeof GALLERY)[number];
@@ -32,10 +31,7 @@ export default function Gallery() {
   const row3 = [...GALLERY.slice(6, 8), GALLERY[0], GALLERY[1]];
 
   return (
-    <section id="work" className="overflow-hidden px-5 py-16 md:py-24">
-      <div className="mx-auto max-w-6xl">
-        <SectionHeading eyebrow="Our Work" title="Nail Art We've Created" sub="A look at our favourite designs, hand-painted in the studio." />
-      </div>
+    <section id="work" className="overflow-hidden px-5 py-10 md:py-16">
       <div className="flex flex-col gap-4">
         <MarqueeRow images={row1} reverse={false} duration={22} />
         <MarqueeRow images={row2} reverse={true} duration={26} />
