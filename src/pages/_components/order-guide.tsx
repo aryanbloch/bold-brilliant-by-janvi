@@ -46,8 +46,10 @@ export default function OrderGuide() {
           </Accordion>
         </Reveal>
         <Reveal delay={0.1}>
-          <p className="flex items-center justify-center gap-2 pt-6 text-center text-sm text-muted-foreground">
-            <ClipboardList className="size-4 text-primary" /> Still have questions? Check our FAQ below or message us on WhatsApp.
+          {/* Icon sits inline with the text so it stays right before "Still" even when the line wraps. */}
+          <p className="pt-6 text-center text-sm text-muted-foreground">
+            <ClipboardList className="mr-1.5 inline size-4 align-[-3px] text-primary" />
+            Still have questions? Check our FAQ below or message us on WhatsApp.
           </p>
         </Reveal>
       </div>
