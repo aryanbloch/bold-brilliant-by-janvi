@@ -1,5 +1,6 @@
 // Site contact/branding details admin tab: WhatsApp number, Instagram, address and hours, plus
-// on/off switches for the floating WhatsApp / Instagram icons shown to customers.
+// on/off switches for the floating WhatsApp / Instagram / Facebook / YouTube / X / Telegram
+// icons shown to customers.
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Save, Trash2 } from "lucide-react";
@@ -16,6 +17,8 @@ type SettingsRow = {
   instagram_url: string | null;
   facebook_url: string | null;
   youtube_url: string | null;
+  x_url: string | null;
+  telegram_url: string | null;
   maps_url: string | null;
   address: string | null;
   hours: { day: string; time: string }[] | null;
@@ -23,6 +26,10 @@ type SettingsRow = {
   gstin: string | null;
   show_whatsapp: boolean;
   show_instagram: boolean;
+  show_facebook: boolean;
+  show_youtube: boolean;
+  show_x: boolean;
+  show_telegram: boolean;
 };
 
 const EMPTY: SettingsRow = {
@@ -35,6 +42,8 @@ const EMPTY: SettingsRow = {
   instagram_url: "",
   facebook_url: "",
   youtube_url: "",
+  x_url: "",
+  telegram_url: "",
   maps_url: "",
   address: "",
   hours: [],
@@ -42,6 +51,10 @@ const EMPTY: SettingsRow = {
   gstin: "",
   show_whatsapp: true,
   show_instagram: true,
+  show_facebook: false,
+  show_youtube: false,
+  show_x: false,
+  show_telegram: false,
 };
 
 const TEXT_FIELDS: { key: keyof SettingsRow; label: string; placeholder?: string }[] = [
@@ -53,10 +66,22 @@ const TEXT_FIELDS: { key: keyof SettingsRow; label: string; placeholder?: string
   { key: "gstin", label: "GSTIN (optional, shown on invoices)" },
   { key: "instagram_user", label: "Instagram Username" },
   { key: "instagram_url", label: "Instagram URL" },
-  { key: "facebook_url", label: "Facebook URL (optional)" },
-  { key: "youtube_url", label: "YouTube URL (optional)" },
+  { key: "facebook_url", label: "Facebook URL" },
+  { key: "youtube_url", label: "YouTube URL" },
+  { key: "x_url", label: "X (Twitter) URL" },
+  { key: "telegram_url", label: "Telegram URL" },
   { key: "maps_url", label: "Google Maps Link" },
   { key: "delivery_note", label: "Delivery Note" },
+];
+
+// Each social icon: which text field holds its link, and which boolean switches it on/off.
+const SOCIAL_TOGGLES: { key: keyof SettingsRow; label: string; linkKey: keyof SettingsRow }[] = [
+  { key: "show_whatsapp", label: "WhatsApp", linkKey: "whatsapp_number" },
+  { key: "show_instagram", label: "Instagram", linkKey: "instagram_url" },
+  { key: "show_facebook", label: "Facebook", linkKey: "facebook_url" },
+  { key: "show_youtube", label: "YouTube", linkKey: "youtube_url" },
+  { key: "show_x", label: "X (Twitter)", linkKey: "x_url" },
+  { key: "show_telegram", label: "Telegram", linkKey: "telegram_url" },
 ];
 
 export default function SiteSettingsTab({ password }: { password: string }) {
@@ -94,8 +119,17 @@ export default function SiteSettingsTab({ password }: { password: string }) {
 
       <AdminCard className="space-y-3">
         <p className="text-sm font-medium">Floating icons on the website</p>
-        <Toggle checked={form.show_whatsapp} onChange={(v) => setForm({ ...form, show_whatsapp: v })} label={`WhatsApp icon: ${form.show_whatsapp ? "On" : "Off"}`} />
-        <Toggle checked={form.show_instagram} onChange={(v) => setForm({ ...form, show_instagram: v })} label={`Instagram icon: ${form.show_instagram ? "On" : "Off"}`} />
+        <div className="flex flex-wrap gap-2">
+          {SOCIAL_TOGGLES.map((t) => (
+            <Toggle
+              key={t.key}
+              checked={Boolean(form[t.key])}
+              onChange={(v) => setForm({ ...form, [t.key]: v })}
+              label={`${t.label}: ${form[t.key] ? "On" : "Off"}`}
+            />
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">Fill in the matching URL below for each icon you switch on.</p>
       </AdminCard>
 
       <AdminCard className="grid gap-4 sm:grid-cols-2">
