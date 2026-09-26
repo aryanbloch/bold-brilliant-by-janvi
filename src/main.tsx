@@ -3,16 +3,23 @@ import { Toaster } from "sonner";
 import "./index.css";
 import Index from "./pages/Index.tsx";
 import ShopPage from "./pages/Shop.tsx";
+import BookPage from "./pages/Book.tsx";
+import OrdersPage from "./pages/Orders.tsx";
+import ProfilePage from "./pages/Profile.tsx";
 import AdminPage from "./pages/admin.tsx";
 import { CartProvider } from "./hooks/use-cart.tsx";
 import { SiteSettingsProvider } from "./hooks/use-site-settings.tsx";
 import ProfileProvider from "./components/profile/profile-provider.tsx";
 
 // /admin shows a separate password-gated dashboard for the studio owner - see src/pages/admin.tsx.
-// /shop shows the shop as its own standalone page (no home page sections) - see src/pages/Shop.tsx.
+// Shop, Book, Orders and Profile each have their own standalone page (no home page sections) -
+// see src/pages/Shop.tsx, Book.tsx, Orders.tsx and Profile.tsx.
 const path = window.location.pathname;
 const isAdmin = path.startsWith("/admin");
 const isShop = path.startsWith("/shop");
+const isBook = path.startsWith("/book");
+const isOrders = path.startsWith("/orders");
+const isProfile = path.startsWith("/profile");
 
 // Browsers sometimes restore the previous scroll position on reload (or when returning from the
 // back-forward cache), dropping visitors into the middle of the page instead of the top. Force
@@ -33,6 +40,14 @@ forceScrollTop();
 window.addEventListener("load", forceScrollTop);
 window.addEventListener("pageshow", forceScrollTop);
 
+function CurrentPage() {
+  if (isShop) return <ShopPage />;
+  if (isBook) return <BookPage />;
+  if (isOrders) return <OrdersPage />;
+  if (isProfile) return <ProfilePage />;
+  return <Index />;
+}
+
 createRoot(document.getElementById("root")!).render(
   isAdmin ? (
     <>
@@ -42,7 +57,9 @@ createRoot(document.getElementById("root")!).render(
   ) : (
     <SiteSettingsProvider>
       <CartProvider>
-        <ProfileProvider>{isShop ? <ShopPage /> : <Index />}</ProfileProvider>
+        <ProfileProvider>
+          <CurrentPage />
+        </ProfileProvider>
         <Toaster position="top-center" richColors />
       </CartProvider>
     </SiteSettingsProvider>
