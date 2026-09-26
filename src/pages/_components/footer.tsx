@@ -80,7 +80,7 @@ export default function Footer() {
   const settings = useSiteSettings();
 
   return (
-    <footer className="border-t bg-secondary/40 px-5 pb-6 pt-12">
+    <footer className="border-t bg-secondary/40 px-5 pb-24 pt-12 md:pb-6">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
           <img src={settings.logoUrl} alt={settings.brand} className="mt-2 size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
