@@ -1,7 +1,6 @@
 import Header from "./_components/header.tsx";
 import Hero from "./_components/hero.tsx";
 import Showcase from "./_components/showcase.tsx";
-import Shop from "./_components/shop.tsx";
 import Gallery from "./_components/gallery.tsx";
 import About from "./_components/about.tsx";
 import Founder from "./_components/founder.tsx";
@@ -16,6 +15,7 @@ import BottomNav from "./_components/bottom-nav.tsx";
 import PromoBanner from "./_components/promo-banner.tsx";
 import PopupBanner from "./_components/popup-banner.tsx";
 
+// Shop now lives on its own page (/shop) - see src/pages/Shop.tsx - so it no longer renders here.
 export default function Index() {
   return (
     <>
@@ -24,7 +24,6 @@ export default function Index() {
       <main className="pb-16 md:pb-0">
         <Hero />
         <Showcase />
-        <Shop />
         <Gallery />
         <About />
         <Founder />
