@@ -5,7 +5,7 @@
 // Env vars (Vercel): RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, SUPABASE_SERVICE_ROLE_KEY,
 // and SUPABASE_URL (falls back to VITE_SUPABASE_URL).
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { dbFetch, getEnv, getUserId, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
+import { dbFetch, getEnv, getUserId, type ApiRequest, type ApiResponse } from "./_lib/db.js";
 
 type Profile = {
   full_name: string;
