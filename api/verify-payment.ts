@@ -90,6 +90,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return;
     }
 
+    // Check if this payment was already saved (e.g. a retry) before inserting again.
+    const existingRes = await dbFetch(supabaseUrl, serviceKey, `orders?razorpay_payment_id=eq.${encodeURIComponent(paymentId)}&select=id`);
+    const existing = (await existingRes.json()) as { id: string }[];
+    if (existing[0]) {
+      res.status(200).json({ verified: true, orderId: existing[0].id });
+      return;
+    }
+
     const profileRes = await dbFetch(supabaseUrl, serviceKey, `profiles?id=eq.${userId}&select=*`);
     const profiles = (await profileRes.json()) as Profile[];
     const profile = Array.isArray(profiles) ? profiles[0] : undefined;
@@ -127,20 +135,19 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         status: "Order placed",
       }),
     });
-    // 409 = this payment was already saved (e.g. a retry) - that's fine.
-    if (!insertRes.ok && insertRes.status !== 409) {
+    if (!insertRes.ok) {
       res.status(500).json({ error: "Your payment was received, but we could not save your order. Please contact us on WhatsApp with your payment ID." });
       return;
     }
+    const savedOrders = (await insertRes.json()) as { id?: string }[];
+    const savedOrderId = savedOrders[0]?.id;
 
-    // Record the coupon redemption so usage limits are enforced (safe to skip on failure/retry).
-    if (couponCode && insertRes.ok) {
+    // Record the coupon redemption so usage limits are enforced (safe to skip on failure).
+    if (couponCode && savedOrderId) {
       try {
-        const savedOrders = (await insertRes.json()) as { id?: string }[];
-        const savedOrderId = savedOrders[0]?.id;
         const couponRes = await dbFetch(supabaseUrl, serviceKey, `coupons?code=eq.${encodeURIComponent(couponCode)}&select=id`);
         const coupons = (await couponRes.json()) as { id: string }[];
-        if (savedOrderId && coupons[0]) {
+        if (coupons[0]) {
           await dbFetch(supabaseUrl, serviceKey, "coupon_redemptions", {
             method: "POST",
             headers: { Prefer: "return=minimal,resolution=ignore-duplicates" },
@@ -152,7 +159,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       }
     }
 
-    res.status(200).json({ verified: true });
+    res.status(200).json({ verified: true, orderId: savedOrderId });
   } catch {
     res.status(500).json({ error: "Your payment was received, but something went wrong. Please contact us on WhatsApp with your payment ID." });
   }
