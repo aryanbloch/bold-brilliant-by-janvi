@@ -27,13 +27,16 @@ export const SITE = {
 export const whatsappLink = (text?: string) =>
   `https://wa.me/${SITE.whatsappNumber}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
 
+// Shop is a standalone page (its own URL, no home page sections shown). Everything else is a
+// section on the home page - hrefs point at "/#section" so they still work correctly from the
+// Shop page (they navigate back home, then jump to that section).
 export const NAV = [
-  { label: "Home", href: "#top" },
-  { label: "Shop", href: "#shop" },
-  { label: "About", href: "#about" },
-  { label: "Reviews", href: "#reviews" },
-  { label: "Book", href: "#booking" },
-  { label: "My Orders", href: "#my-orders" },
-  { label: "FAQ", href: "#faq" },
-  { label: "Contact", href: "#contact" },
+  { label: "Home", href: "/" },
+  { label: "Shop", href: "/shop" },
+  { label: "About", href: "/#about" },
+  { label: "Reviews", href: "/#reviews" },
+  { label: "Book", href: "/#booking" },
+  { label: "My Orders", href: "/#my-orders" },
+  { label: "FAQ", href: "/#faq" },
+  { label: "Contact", href: "/#contact" },
 ] as const;
