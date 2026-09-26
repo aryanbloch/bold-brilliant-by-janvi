@@ -7,7 +7,7 @@
 // Access: the signed-in customer who owns the order (?token=<access_token>), OR the admin
 // (?adminPassword=... or the x-admin-password header).
 // Env vars (Vercel): SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL.
-import { checkAdminPassword, dbFetch, escapeHtml, getEnv, q, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
+import { checkAdminPassword, dbFetch, escapeHtml, getEnv, q, type ApiRequest, type ApiResponse } from "./_lib/db.js";
 
 type InvoiceRow = { id: string; order_id: string; user_id: string; invoice_number: string; created_at: string };
 type OrderRow = {
