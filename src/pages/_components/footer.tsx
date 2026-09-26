@@ -4,8 +4,9 @@ import { NAV } from "@/lib/site-config.ts";
 import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
 import { useSiteContent } from "@/hooks/use-site-content.ts";
 
-// My Orders stays in the header menu only.
-const FOOTER_NAV = NAV.filter((n) => n.href !== "#my-orders");
+// Same nav items as the header, styled the same way (rounded pill links), so the footer mirrors
+// the header. My Orders stays in the header menu only.
+const FOOTER_NAV = NAV.filter((n) => n.href !== "/#my-orders");
 
 const DEFAULT_POLICIES: Record<string, { title: string; points: string[] }> = {
   privacy_policy: {
@@ -80,36 +81,41 @@ export default function Footer() {
   const settings = useSiteSettings();
 
   return (
-    <footer className="border-t bg-secondary/40 px-5 pb-24 pt-12 md:pb-6">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-start gap-3">
-          <img src={settings.logoUrl} alt={settings.brand} className="mt-2 size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
-          <div>
-            <p className="font-serif text-2xl font-semibold leading-tight">{settings.brand}</p>
-            <p className="text-sm leading-snug text-muted-foreground">{settings.byline} · Nail Art Studio, Rajkot, Gujarat 360001</p>
-            <SocialButtons className="pt-4" />
-          </div>
-        </div>
-        <nav aria-label="Footer">
-          <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            {FOOTER_NAV.map((n) => (
-              <li key={n.href}><a href={n.href} className="hover:text-primary">{n.label}</a></li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-      <div className="mx-auto mt-8 flex max-w-6xl flex-col items-center gap-3 border-t pt-8 text-center text-xs text-muted-foreground">
-        <p>© {new Date().getFullYear()} {settings.brand} {settings.byline}. All rights reserved.</p>
-        <div className="flex flex-wrap justify-center gap-6">
-          {Object.entries(DEFAULT_POLICIES).map(([key, p]) => (
-            <Dialog key={key}>
-              <DialogTrigger className="cursor-pointer hover:text-primary">{p.title}</DialogTrigger>
-              <DialogContent className="max-h-[85vh] overflow-y-auto">
-                <DialogTitle className="font-serif text-2xl">{p.title}</DialogTitle>
-                <PolicyContent policyKey={key} />
-              </DialogContent>
-            </Dialog>
+    <footer className="border-t bg-secondary/40 px-3 pb-24 pt-8 md:pb-8">
+      <div className="mx-auto max-w-6xl">
+        {/* Same rounded pill bar look as the header navbar, with all the same nav links. */}
+        <nav aria-label="Footer" className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-card/85 px-3 py-2.5 shadow-sm backdrop-blur-md">
+          {FOOTER_NAV.map((n) => (
+            <a key={n.href} href={n.href} className="rounded-full px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-primary">
+              {n.label}
+            </a>
           ))}
+        </nav>
+
+        <div className="flex flex-col items-center gap-6 pt-10 text-center md:flex-row md:items-start md:justify-between md:text-left">
+          <div className="flex items-start gap-3">
+            <img src={settings.logoUrl} alt={settings.brand} className="mt-1 size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
+            <div className="text-left">
+              <p className="font-serif text-2xl font-semibold leading-tight">{settings.brand}</p>
+              <p className="text-sm leading-snug text-muted-foreground">{settings.byline} · Nail Art Studio, Rajkot, Gujarat 360001</p>
+            </div>
+          </div>
+          <SocialButtons />
+        </div>
+
+        <div className="mx-auto mt-8 flex max-w-6xl flex-col items-center gap-3 border-t pt-8 text-center text-xs text-muted-foreground">
+          <p>© {new Date().getFullYear()} {settings.brand} {settings.byline}. All rights reserved.</p>
+          <div className="flex flex-wrap justify-center gap-6">
+            {Object.entries(DEFAULT_POLICIES).map(([key, p]) => (
+              <Dialog key={key}>
+                <DialogTrigger className="cursor-pointer hover:text-primary">{p.title}</DialogTrigger>
+                <DialogContent className="max-h-[85vh] overflow-y-auto">
+                  <DialogTitle className="font-serif text-2xl">{p.title}</DialogTitle>
+                  <PolicyContent policyKey={key} />
+                </DialogContent>
+              </Dialog>
+            ))}
+          </div>
         </div>
       </div>
     </footer>
