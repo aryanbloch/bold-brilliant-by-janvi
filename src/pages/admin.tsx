@@ -62,11 +62,25 @@ function useStudioBranding(): { brand: string; logoUrl: string } {
   return { brand, logoUrl };
 }
 
-async function checkPassword(password: string): Promise<{ ok: boolean; error?: string }> {
-  const res = await fetch("/api/admin-orders?stats=1", { headers: { "x-admin-password": password } });
-  if (res.ok) return { ok: true };
-  const data = (await res.json().catch(() => ({}))) as { error?: string };
-  return { ok: false, error: data.error ?? "Incorrect password" };
+// Checks the admin password against the server. "invalid" only means the server actively
+// rejected it (401 - wrong password); any other failure (offline, cold start, etc.) is reported
+// separately so the caller doesn't sign a valid admin out just because one request hiccuped.
+type PasswordCheck = { status: "valid" } | { status: "invalid"; error: string } | { status: "unknown" };
+
+async function checkPassword(password: string): Promise<PasswordCheck> {
+  try {
+    const res = await fetch("/api/admin-orders?stats=1", { headers: { "x-admin-password": password } });
+    if (res.ok) return { status: "valid" };
+    if (res.status === 401) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      return { status: "invalid", error: data.error ?? "Incorrect password" };
+    }
+    // Server/config error (500, etc.) - we can't tell if the password is right, so don't sign out.
+    return { status: "unknown" };
+  } catch {
+    // Network error (offline, dev machine hiccup) - same as above, stay signed in.
+    return { status: "unknown" };
+  }
 }
 
 function Login({ onSignedIn }: { onSignedIn: (password: string) => void }) {
@@ -79,10 +93,14 @@ function Login({ onSignedIn }: { onSignedIn: (password: string) => void }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { ok, error: err } = await checkPassword(password);
+    const result = await checkPassword(password);
     setLoading(false);
-    if (!ok) {
-      setError(err ?? "Incorrect password");
+    if (result.status === "invalid") {
+      setError(result.error);
+      return;
+    }
+    if (result.status === "unknown") {
+      setError("Could not reach the server. Please check your connection and try again.");
       return;
     }
     storePassword(password);
@@ -189,10 +207,12 @@ export default function AdminPage() {
   const [verifying, setVerifying] = useState(!!password);
 
   // Re-validate a stored password on load, in case it's been changed since the last visit.
+  // Only ever signs the admin out when the server actively rejects the password (401) - a
+  // network hiccup or cold-start error must never log a valid admin out on a simple refresh.
   useEffect(() => {
     if (!password) return;
-    void checkPassword(password).then(({ ok }) => {
-      if (!ok) {
+    void checkPassword(password).then((result) => {
+      if (result.status === "invalid") {
         clearStoredPassword();
         setPassword(null);
         toast.error("Your admin session expired. Please sign in again.");
