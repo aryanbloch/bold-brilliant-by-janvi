@@ -1,6 +1,8 @@
 // Shared helpers for the Vercel serverless functions in api/. This file lives in an
 // underscore-prefixed folder so Vercel does NOT deploy it as its own endpoint - it's only
 // ever imported by the real endpoints.
+import { timingSafeEqual } from "node:crypto";
+
 export interface ApiRequest {
   method?: string;
   body?: unknown;
@@ -39,21 +41,24 @@ function providedPassword(req: ApiRequest): string | undefined {
   return raw ? unquote(raw.trim()) : undefined;
 }
 
-// Shared admin password check, used by every admin-only endpoint (api/admin.ts, upload-image.ts).
-// Trimmed and unquoted on both sides: a stray trailing space, newline, or wrapping quote pasted
-// into the Vercel dashboard (or into the login box) is a common, invisible cause of "incorrect
-// password".
+// Shared admin password check, used by every admin-only endpoint.
+// Trimmed and unquoted on both sides (stray spaces/quotes are a common cause of "incorrect
+// password"). Uses a constant-time comparison so the password can't be guessed from timing.
 export function checkAdminPassword(req: ApiRequest): boolean {
   const expected = expectedPassword();
-  return Boolean(expected) && providedPassword(req) === expected;
+  const provided = providedPassword(req);
+  if (!expected || !provided) return false;
+  const a = Buffer.from(expected);
+  const b = Buffer.from(provided);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
-// TEMPORARY debugging aid: reveals only character counts (never the password) so the owner can
-// spot a mismatch between the Vercel value and what they type. Remove once login works.
-export function passwordMismatchHint(req: ApiRequest): string {
-  const expected = expectedPassword() ?? "";
-  const provided = providedPassword(req) ?? "";
-  return `Incorrect admin password (server password: ${expected.length} characters, you typed: ${provided.length} characters)`;
+// Responds to a wrong password after a short pause. Serverless functions can't keep a
+// per-IP counter, so the delay is what slows down anyone trying passwords in a loop.
+// The message never reveals anything about the real password.
+export async function rejectWrongPassword(res: ApiResponse): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  res.status(401).json({ error: "Incorrect admin password" });
 }
 
 export function getEnv(): { supabaseUrl: string; serviceKey: string } | null {
@@ -96,4 +101,13 @@ export async function getUserId(req: ApiRequest, supabaseUrl: string, serviceKey
 
 export function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// Start of "today" in India (IST, UTC+5:30), as a UTC ISO string, so dashboard "today"
+// numbers reset at midnight IST instead of 5:30 AM IST.
+export function startOfTodayIstUtc(now: Date = new Date()): string {
+  const IST_OFFSET_MS = 330 * 60 * 1000;
+  const ist = new Date(now.getTime() + IST_OFFSET_MS);
+  const istMidnightAsUtc = Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate());
+  return new Date(istMidnightAsUtc - IST_OFFSET_MS).toISOString();
 }
