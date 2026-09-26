@@ -1,7 +1,8 @@
-// Checkout requires sign in and a completed profile. The server calculates the price and saves
-// the order after payment, so every order shows up automatically in "My Orders".
+// Checkout requires sign in and a completed profile. The server calculates the price (including
+// any coupon discount) and saves the order after payment, so every order shows up automatically
+// in "My Orders".
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, MapPin, Plus } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, Plus, Tag } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import { useProfile } from "@/hooks/use-profile.ts";
 import { supabase } from "@/lib/supabase.ts";
 import { formatDeliveryAddress } from "@/lib/profile.ts";
 import type { CheckoutOrder } from "@/lib/catalog.ts";
+import { COUPONS } from "@/lib/coupons.ts";
 import { loadRazorpayScript, type RazorpayResponse } from "@/lib/razorpay.ts";
 import SignInDialog from "./sign-in-dialog.tsx";
 
@@ -36,11 +38,17 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
   const [showSignIn, setShowSignIn] = useState(false);
   const [step, setStep] = useState<"form" | "paying" | "success">("form");
   const [error, setError] = useState<string | null>(null);
+  const [couponInput, setCouponInput] = useState("");
+  const [paidAmount, setPaidAmount] = useState<number | null>(null);
 
   // Once the auth state has finished loading, prompt sign in if the customer isn't signed in yet.
   useEffect(() => {
     if (!authLoading && !isSignedIn) setShowSignIn(true);
   }, [authLoading, isSignedIn]);
+
+  const normalizedCoupon = couponInput.trim().toUpperCase();
+  const coupon = normalizedCoupon ? COUPONS[normalizedCoupon] : undefined;
+  const previewTotal = coupon ? Math.round(order.total * (1 - coupon.percentOff / 100)) : order.total;
 
   const pay = async () => {
     if (!profile) {
@@ -58,14 +66,18 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
       }
       await loadRazorpayScript();
 
-      const { ok, data } = await postJson<{ orderId?: string; amount?: number; currency?: string; keyId?: string; error?: string }>(
+      const { ok, data } = await postJson<{ orderId?: string; amount?: number; currency?: string; keyId?: string; couponApplied?: string | null; error?: string }>(
         "/api/create-order",
         token,
-        { items: order.items },
+        { items: order.items, couponCode: normalizedCoupon || undefined },
       );
       if (!ok || !data.orderId || !data.keyId || !data.amount) {
         throw new Error(data.error ?? "Could not start payment. Please try again.");
       }
+      if (normalizedCoupon && !data.couponApplied) {
+        toast.error("That coupon code isn't valid, so it wasn't applied.");
+      }
+      setPaidAmount(data.amount / 100);
 
       const razorpay = new window.Razorpay!({
         key: data.keyId,
@@ -116,7 +128,7 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
               <CheckCircle2 className="size-14 text-emerald-500" />
               <DialogTitle className="font-serif text-2xl">Order Confirmed!</DialogTitle>
               <p className="text-sm text-muted-foreground">
-                Your payment for {order.title} was successful. You can see your order status anytime in the "My Orders" section.
+                Your payment of \u20b9{paidAmount ?? order.total} for {order.title} was successful. You can see your order status anytime in the "My Orders" section.
               </p>
               <button onClick={onClose} className="mt-2 inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-[1.02]">
                 Done
@@ -126,7 +138,14 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
             <>
               <DialogTitle className="font-serif text-2xl">Checkout</DialogTitle>
               <p className="text-sm text-muted-foreground">
-                {order.title} · <span className="font-medium text-primary">₹{order.total}</span>
+                {order.title} ·{" "}
+                {coupon ? (
+                  <>
+                    <span className="line-through">\u20b9{order.total}</span> <span className="font-medium text-primary">\u20b9{previewTotal}</span>
+                  </>
+                ) : (
+                  <span className="font-medium text-primary">\u20b9{order.total}</span>
+                )}
               </p>
               <div className="grid gap-4 pt-2">
                 {profileLoading ? (
@@ -150,6 +169,25 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
                     <Plus className="size-4" /> Add delivery address
                   </button>
                 )}
+
+                <div>
+                  <label htmlFor="coupon" className="flex items-center gap-1.5 pb-1.5 text-xs font-medium text-muted-foreground">
+                    <Tag className="size-3.5" /> Have a coupon code?
+                  </label>
+                  <input
+                    id="coupon"
+                    placeholder="e.g. WELCOME10"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value)}
+                    className="h-11 w-full rounded-xl border bg-background/70 px-3 text-sm uppercase"
+                  />
+                  {normalizedCoupon && (
+                    <p className={`pt-1 text-xs ${coupon ? "text-emerald-600" : "text-destructive"}`}>
+                      {coupon ? `${coupon.percentOff}% off applied` : "Invalid coupon code"}
+                    </p>
+                  )}
+                </div>
+
                 {error && <p className="break-words text-sm text-destructive">{error}</p>}
                 <button
                   onClick={pay}
@@ -161,7 +199,7 @@ export default function CheckoutDialog({ order, onClose, onSuccess }: Props) {
                       <Loader2 className="size-4 animate-spin" /> Opening payment...
                     </>
                   ) : (
-                    `Pay ₹${order.total}`
+                    `Pay \u20b9${previewTotal}`
                   )}
                 </button>
                 <p className="text-center text-xs text-muted-foreground">Secure payment powered by Razorpay. Free delivery all over India.</p>

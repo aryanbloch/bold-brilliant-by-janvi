@@ -24,6 +24,12 @@ const PRICES: Record<string, number> = {
 };
 const MAX_QTY = 20;
 
+// Keep in sync with src/lib/coupons.ts.
+const COUPONS: Record<string, { percentOff: number }> = {
+  WELCOME10: { percentOff: 10 },
+  BB15: { percentOff: 15 },
+};
+
 type Item = { name: string; qty: number };
 
 function parseItems(value: unknown): Item[] | null {
@@ -37,6 +43,15 @@ function parseItems(value: unknown): Item[] | null {
     items.push({ name, qty });
   }
   return items;
+}
+
+function applyCoupon(total: number, code: unknown): { total: number; couponCode: string | null } {
+  if (typeof code !== "string" || !code.trim()) return { total, couponCode: null };
+  const normalized = code.trim().toUpperCase();
+  const coupon = COUPONS[normalized];
+  if (!coupon) return { total, couponCode: null };
+  const discounted = Math.round(total * (1 - coupon.percentOff / 100));
+  return { total: discounted, couponCode: normalized };
 }
 
 // Confirms the Supabase sign-in token and returns the customer's user id.
@@ -78,7 +93,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return;
     }
 
-    const total = items.reduce((sum, i) => sum + PRICES[i.name] * i.qty, 0);
+    const rawTotal = items.reduce((sum, i) => sum + PRICES[i.name] * i.qty, 0);
+    const { total, couponCode } = applyCoupon(rawTotal, (req.body as { couponCode?: unknown } | undefined)?.couponCode);
     const summary = items.map((i) => (i.qty > 1 ? `${i.name} x${i.qty}` : i.name)).join(", ");
 
     const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
@@ -89,7 +105,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         amount: total * 100, // Razorpay expects paise
         currency: "INR",
         // Read back in verify-payment to save the order - never trusted from the browser.
-        notes: { user_id: userId, items: summary.slice(0, 250) },
+        notes: { user_id: userId, items: summary.slice(0, 220), coupon: couponCode ?? "" },
       }),
     });
     const data = (await response.json()) as { id?: string; amount?: number; currency?: string; error?: { description?: string } };
@@ -99,7 +115,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return;
     }
 
-    res.status(200).json({ orderId: data.id, amount: data.amount, currency: data.currency, keyId });
+    res.status(200).json({
+      orderId: data.id,
+      amount: data.amount,
+      currency: data.currency,
+      keyId,
+      couponApplied: couponCode,
+      discount: rawTotal - total,
+    });
   } catch {
     res.status(500).json({ error: "Something went wrong while starting your payment." });
   }

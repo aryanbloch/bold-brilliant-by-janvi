@@ -4,6 +4,7 @@ import Showcase from "./_components/showcase.tsx";
 import Shop from "./_components/shop.tsx";
 import About from "./_components/about.tsx";
 import Founder from "./_components/founder.tsx";
+import Testimonials from "./_components/testimonials.tsx";
 import Booking from "./_components/booking.tsx";
 import OrderGuide from "./_components/order-guide.tsx";
 import MyOrders from "./_components/my-orders.tsx";
@@ -21,6 +22,7 @@ export default function Index() {
         <Shop />
         <About />
         <Founder />
+        <Testimonials />
         <Booking />
         <OrderGuide />
         <MyOrders />
