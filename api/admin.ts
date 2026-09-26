@@ -10,7 +10,7 @@
 //   DELETE /api/admin?resource=products&id=<uuid>
 // Singleton resources (site_settings, invoice_template) ignore id and always target row 1.
 // site_content is keyed by `key` instead of `id` (PATCH body: { key, ...fields }).
-import { checkAdminPassword, dbFetch, getEnv, q, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
+import { checkAdminPassword, dbFetch, getEnv, q, type ApiRequest, type ApiResponse } from "./_lib/db.js";
 
 type Resource = {
   table: string;
