@@ -9,6 +9,16 @@ import ProfileProvider from "./components/profile/profile-provider.tsx";
 // /admin shows a separate password-gated dashboard for the studio owner - see src/pages/admin.tsx.
 const isAdmin = window.location.pathname.startsWith("/admin");
 
+// Browsers sometimes restore the previous scroll position on reload, dropping visitors into the
+// middle of the page instead of the top. Force every fresh load to start at the top, unless the
+// url points at a specific section via a hash.
+if ("scrollRestoration" in window.history) {
+  window.history.scrollRestoration = "manual";
+}
+if (!window.location.hash) {
+  window.scrollTo(0, 0);
+}
+
 createRoot(document.getElementById("root")!).render(
   isAdmin ? (
     <>
