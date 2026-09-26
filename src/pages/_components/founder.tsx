@@ -1,15 +1,17 @@
 import Reveal from "@/components/reveal.tsx";
-import { SITE } from "@/lib/site-config.ts";
+import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
 
 export default function Founder() {
+  const settings = useSiteSettings();
+
   return (
     <section id="founder" className="px-5 py-16 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="grid items-center gap-12 md:grid-cols-2">
           <Reveal className="order-1 md:order-2">
             <img
-              src={SITE.founderPhoto}
-              alt="Janvi Sarang, founder and nail artist, at the Bold & Brilliant studio in Rajkot"
+              src={settings.founderPhotoUrl}
+              alt={`Founder and nail artist at the ${settings.brand} studio`}
               loading="lazy"
               width={534}
               height={720}
@@ -17,9 +19,9 @@ export default function Founder() {
             />
           </Reveal>
           <Reveal delay={0.1} className="order-2 md:order-1">
-            <p className="pb-3 text-xs font-medium uppercase tracking-[0.3em] text-primary">Meet Janvi</p>
+            <p className="pb-3 text-xs font-medium uppercase tracking-[0.3em] text-primary">Meet the Founder</p>
             <h2 className="font-serif text-4xl font-semibold md:text-5xl">
-              Hi, I&apos;m Janvi — the artist behind Bold & Brilliant. ✨
+              Hi, I&apos;m {settings.byline.replace(/^by\s+/i, "")} — the artist behind {settings.brand}. ✨
             </h2>
             <div className="space-y-4 pt-6 text-muted-foreground">
               <p>
