@@ -5,7 +5,7 @@
 // only ever reads the order's own stored tracking number and courier.
 // Env vars (Vercel): DELHIVERY_API_TOKEN, SHIPROCKET_EMAIL, SHIPROCKET_PASSWORD,
 // SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL (falls back to VITE_SUPABASE_URL).
-import { dbFetch, getEnv, q, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
+import { dbFetch, getEnv, q, type ApiRequest, type ApiResponse } from "./_lib/db.js";
 
 type TrackingEvent = { status: string; location: string; date: string };
 type TrackingResult = { courier: string; currentStatus: string; currentLocation: string; events: TrackingEvent[]; delivered: boolean };
