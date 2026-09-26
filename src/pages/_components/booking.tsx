@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
-import { whatsappLink } from "@/lib/site-config.ts";
+import { useSiteSettings, whatsappLinkFor } from "@/hooks/use-site-settings.tsx";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase.ts";
+import { toast } from "sonner";
 
 const SERVICES = ["Classic Nail Art", "French Nails", "3D Nail Art", "Bridal Nails", "Luxury Nail Art", "Custom Design"] as const;
 
@@ -23,10 +25,30 @@ type FormValues = z.infer<typeof schema>;
 const FIELD = "h-12 rounded-xl bg-background/70";
 
 export default function Booking() {
+  const settings = useSiteSettings();
   const today = new Date().toISOString().slice(0, 10);
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  const onSubmit = (d: FormValues) => {
+  const onSubmit = async (d: FormValues) => {
+    // Save the request so the studio owner can manage it from the admin panel, then also open
+    // WhatsApp for an instant heads-up (best of both: tracked + immediate).
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from("bookings").insert({
+        name: d.name,
+        phone: d.phone,
+        preferred_date: d.date,
+        preferred_time: d.time,
+        service: d.service,
+        message: d.message?.trim() || null,
+      });
+      if (error) {
+        toast.error("Could not save your booking request. Please try again or message us on WhatsApp.");
+        return;
+      }
+      toast.success("Booking request sent! We'll confirm shortly.");
+      reset();
+    }
+
     const text = `Hello! I would like to book a nail-art appointment.
 
 Name: ${d.name}
@@ -35,7 +57,7 @@ Date: ${d.date}
 Time: ${d.time}
 Service: ${d.service}
 Message: ${d.message?.trim() || "-"}`;
-    window.open(whatsappLink(text), "_blank", "noopener");
+    window.open(whatsappLinkFor(settings.whatsappNumber, text), "_blank", "noopener");
   };
 
   const err = (k: keyof FormValues) => errors[k] && <p className="pt-1 text-xs text-destructive">{errors[k]?.message}</p>;
@@ -80,8 +102,12 @@ Message: ${d.message?.trim() || "-"}`;
               <Label htmlFor="message" className="pb-2">Message (optional)</Label>
               <Textarea id="message" rows={3} placeholder="Any design ideas or reference?" className="rounded-xl bg-background/70" {...register("message")} />
             </div>
-            <button type="submit" className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[#25D366] font-medium text-white shadow-lg shadow-[#25D366]/30 transition-transform hover:scale-[1.02] active:scale-95 sm:col-span-2">
-              <WhatsappLogo size={22} weight="fill" /> Book via WhatsApp
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[#25D366] font-medium text-white shadow-lg shadow-[#25D366]/30 transition-transform hover:scale-[1.02] active:scale-95 disabled:opacity-60 sm:col-span-2"
+            >
+              <WhatsappLogo size={22} weight="fill" /> {isSubmitting ? "Sending..." : "Book via WhatsApp"}
             </button>
           </form>
         </Reveal>
