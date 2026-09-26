@@ -1,26 +1,45 @@
-import Reveal, { SectionHeading } from "@/components/reveal.tsx";
-import Carousel from "@/components/carousel.tsx";
+// Auto-scrolling nail art gallery: three rows that scroll on their own (no swiping needed),
+// row 1 moves right-to-left, row 2 left-to-right, row 3 right-to-left again - matching the
+// reference video. Each row's image list is duplicated so the loop is seamless.
+import { motion } from "motion/react";
+import { SectionHeading } from "@/components/reveal.tsx";
 import { GALLERY } from "@/lib/gallery.ts";
 
-export default function Gallery() {
+type GalleryImage = (typeof GALLERY)[number];
+
+function MarqueeRow({ images, reverse, duration }: { images: GalleryImage[]; reverse: boolean; duration: number }) {
+  const loop = [...images, ...images];
   return (
-    <section id="gallery" className="px-5 py-16 md:py-24">
+    <div className="overflow-hidden">
+      <motion.div
+        className="flex w-max gap-4"
+        animate={{ x: reverse ? ["-50%", "0%"] : ["0%", "-50%"] }}
+        transition={{ duration, ease: "linear", repeat: Infinity }}
+      >
+        {loop.map((g, i) => (
+          <div key={`${g.name}-${i}`} className="relative h-40 w-28 shrink-0 overflow-hidden rounded-2xl sm:h-52 sm:w-36 md:h-64 md:w-48">
+            <img src={g.url} alt={`${g.name} nail art in Rajkot`} loading="lazy" className="h-full w-full object-cover" />
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+export default function Gallery() {
+  const row1 = GALLERY.slice(0, 3);
+  const row2 = GALLERY.slice(3, 6);
+  const row3 = [...GALLERY.slice(6, 8), GALLERY[0], GALLERY[1]];
+
+  return (
+    <section id="gallery" className="overflow-hidden px-5 py-16 md:py-24">
       <div className="mx-auto max-w-6xl">
-        <SectionHeading eyebrow="Gallery" title="Nail Art We've Created" sub="Swipe through our favourite designs, hand-painted in the studio." />
-        <Reveal>
-          <Carousel itemClassName="w-[72%] sm:w-[42%] lg:w-[27%]">
-            {GALLERY.map((g) => (
-              <div key={g.name} className="group relative aspect-[4/5] overflow-hidden rounded-3xl bg-muted">
-                <img src={g.url} alt={`${g.name} - ${g.category} nail art in Rajkot`} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-pink-200">{g.category}</p>
-                  <p className="font-serif text-lg leading-tight">{g.name}</p>
-                </div>
-              </div>
-            ))}
-          </Carousel>
-        </Reveal>
+        <SectionHeading eyebrow="Gallery" title="Nail Art We've Created" sub="A look at our favourite designs, hand-painted in the studio." />
+      </div>
+      <div className="flex flex-col gap-4">
+        <MarqueeRow images={row1} reverse={false} duration={22} />
+        <MarqueeRow images={row2} reverse={true} duration={26} />
+        <MarqueeRow images={row3} reverse={false} duration={24} />
       </div>
     </section>
   );
