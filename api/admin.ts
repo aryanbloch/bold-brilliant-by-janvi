@@ -143,10 +143,25 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         res.status(400).json({ error: "Nothing to update" });
         return;
       }
-      let filter: string;
+
+      // Singletons: upsert row 1, so saving works even if the row was never created.
       if (resource.singleton) {
-        filter = "id=eq.1";
-      } else if (resource.keyColumn) {
+        const r = await dbFetch(supabaseUrl, serviceKey, `${resource.table}?on_conflict=id`, {
+          method: "POST",
+          headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+          body: JSON.stringify({ id: 1, ...updates }),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          res.status(400).json({ error: friendlyDbError(data) });
+          return;
+        }
+        res.status(200).json({ row: Array.isArray(data) ? data[0] : data });
+        return;
+      }
+
+      let filter: string;
+      if (resource.keyColumn) {
         const key = body[resource.keyColumn];
         if (typeof key !== "string" || !key) {
           res.status(400).json({ error: `Missing ${resource.keyColumn}` });
@@ -171,6 +186,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         res.status(400).json({ error: friendlyDbError(data) });
         return;
       }
+      // PostgREST returns 200 with [] when nothing matched - report it instead of fake success.
+      if (Array.isArray(data) && data.length === 0) {
+        res.status(404).json({ error: "This item no longer exists. Please refresh the page." });
+        return;
+      }
       res.status(200).json({ row: Array.isArray(data) ? data[0] : data });
       return;
     }
@@ -185,9 +205,17 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         res.status(400).json({ error: "Missing id" });
         return;
       }
-      const r = await dbFetch(supabaseUrl, serviceKey, `${resource.table}?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+      const r = await dbFetch(supabaseUrl, serviceKey, `${resource.table}?id=eq.${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: { Prefer: "return=representation" },
+      });
       if (!r.ok) {
         res.status(400).json({ error: "Could not delete." });
+        return;
+      }
+      const deleted = (await r.json().catch(() => [])) as unknown[];
+      if (Array.isArray(deleted) && deleted.length === 0) {
+        res.status(404).json({ error: "This item was already deleted. Please refresh the page." });
         return;
       }
       res.status(200).json({ ok: true });

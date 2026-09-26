@@ -143,22 +143,31 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return;
     }
 
-    const patch: Record<string, unknown> = {};
-    if (body.status !== undefined) patch.status = body.status;
-    if (body.trackingNumber !== undefined) patch.tracking_number = body.trackingNumber || null;
-    if (body.courier !== undefined) patch.courier = body.courier || null;
-    if (body.adminNote !== undefined) patch.admin_note = body.adminNote;
-    // Dispatching: setting a tracking number for the first time also stamps dispatched_at and
-    // moves the status to Shipped (unless the admin explicitly chose a different status).
-    if (body.trackingNumber && body.status === undefined) {
-      patch.status = "Shipped";
-      patch.dispatched_at = new Date().toISOString();
-    } else if (body.trackingNumber && body.status === "Shipped") {
-      patch.dispatched_at = new Date().toISOString();
-    }
-
     try {
-      const r = await dbFetch(supabaseUrl, serviceKey, `orders?id=eq.${encodeURIComponent(body.id)}`, {
+      const orderFilter = `orders?id=eq.${encodeURIComponent(body.id)}`;
+      // Load the current order so dispatch info is only stamped the first time.
+      const currentRes = await dbFetch(supabaseUrl, serviceKey, `${orderFilter}&select=status,dispatched_at`);
+      const current = currentRes.ok ? ((await currentRes.json()) as { status: string; dispatched_at: string | null }[])[0] : undefined;
+      if (!current) {
+        res.status(404).json({ error: "Order not found. Please refresh the page." });
+        return;
+      }
+
+      const patch: Record<string, unknown> = {};
+      if (body.status !== undefined) patch.status = body.status;
+      if (body.trackingNumber !== undefined) patch.tracking_number = body.trackingNumber || null;
+      if (body.courier !== undefined) patch.courier = body.courier || null;
+      if (body.adminNote !== undefined) patch.admin_note = body.adminNote;
+      // Dispatching: the first time a tracking number is set, stamp dispatched_at and move a
+      // not-yet-shipped order to Shipped (unless the admin chose a status). Editing a tracking
+      // number later keeps the original dispatch date and status.
+      if (body.trackingNumber && !current.dispatched_at) {
+        const notYetShipped = current.status === "Order placed" || current.status === "Processing";
+        if (body.status === undefined && notYetShipped) patch.status = "Shipped";
+        if (body.status === undefined || body.status === "Shipped") patch.dispatched_at = new Date().toISOString();
+      }
+
+      const r = await dbFetch(supabaseUrl, serviceKey, orderFilter, {
         method: "PATCH",
         headers: { Prefer: "return=minimal" },
         body: JSON.stringify(patch),
