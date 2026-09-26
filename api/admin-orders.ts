@@ -7,7 +7,7 @@
 //   GET    /api/admin-orders?stats=1                -> dashboard numbers
 //   GET    /api/admin-orders?export=csv             -> CSV file download
 //   PATCH  /api/admin-orders   body: { id, status?, trackingNumber?, courier?, adminNote? }
-import { checkAdminPassword, dbFetch, getEnv, q, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
+import { checkAdminPassword, dbFetch, getEnv, passwordMismatchHint, q, type ApiRequest, type ApiResponse } from "./_lib/db.ts";
 
 type Order = {
   id: string;
@@ -39,13 +39,17 @@ function csvEscape(v: unknown): string {
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
+  if (!process.env.ADMIN_PASSWORD) {
+    res.status(500).json({ error: "ADMIN_PASSWORD is not reaching the server. Check it is enabled for Production in Vercel, then Redeploy." });
+    return;
+  }
   const env = getEnv();
-  if (!env || !process.env.ADMIN_PASSWORD) {
-    res.status(500).json({ error: "Admin panel is not set up yet. Add ADMIN_PASSWORD in Vercel env vars." });
+  if (!env) {
+    res.status(500).json({ error: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing in Vercel env vars." });
     return;
   }
   if (!checkAdminPassword(req)) {
-    res.status(401).json({ error: "Incorrect admin password" });
+    res.status(401).json({ error: passwordMismatchHint(req) });
     return;
   }
   const { supabaseUrl, serviceKey } = env;
