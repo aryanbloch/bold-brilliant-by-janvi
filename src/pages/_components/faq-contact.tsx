@@ -1,7 +1,6 @@
 import { Clock, MapPin, Navigation } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion.tsx";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
-import SocialButtons from "@/components/social-buttons.tsx";
 import { SITE } from "@/lib/site-config.ts";
 
 const FAQS = [
@@ -56,8 +55,6 @@ export default function FaqContact() {
                 </div>
               </div>
               <div className="flex flex-col justify-center gap-4 md:items-end">
-                <p className="opacity-85 md:text-right">Chat with us anytime on WhatsApp or Instagram.</p>
-                <SocialButtons className="md:justify-end" />
                 <a href={SITE.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 font-medium text-[#7a1f4a] transition-transform hover:scale-105">
                   <Navigation className="size-4" /> Open in Google Maps
                 </a>
