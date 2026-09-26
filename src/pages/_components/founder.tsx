@@ -1,8 +1,14 @@
 import Reveal from "@/components/reveal.tsx";
 import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
+import { useSiteContent } from "@/hooks/use-site-content.ts";
+
+const DEFAULT_BIO =
+  "What started as a love for nail art grew into a space where I can turn creative ideas into personalised nail sets, crafted with patience, precision and lots of love.";
 
 export default function Founder() {
   const settings = useSiteSettings();
+  const content = useSiteContent();
+  const bio = content?.founder?.body.trim() || DEFAULT_BIO;
 
   return (
     <section id="founder" className="px-5 py-16 md:py-24">
@@ -23,12 +29,7 @@ export default function Founder() {
             <h2 className="font-serif text-4xl font-semibold md:text-5xl">
               Hi, I&apos;m {settings.byline.replace(/^by\s+/i, "")} — the artist behind {settings.brand}. ✨
             </h2>
-            <div className="space-y-4 pt-6 text-muted-foreground">
-              <p>
-                What started as a love for nail art grew into a space where I can turn creative ideas
-                into personalised nail sets, crafted with patience, precision and lots of love.
-              </p>
-            </div>
+            <div className="space-y-4 whitespace-pre-line pt-6 text-muted-foreground">{bio}</div>
           </Reveal>
         </div>
       </div>
