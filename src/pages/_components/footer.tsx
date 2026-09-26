@@ -1,12 +1,7 @@
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog.tsx";
 import SocialButtons from "@/components/social-buttons.tsx";
-import { NAV } from "@/lib/site-config.ts";
 import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
 import { useSiteContent } from "@/hooks/use-site-content.ts";
-
-// Same nav items as the header, styled the same way (rounded pill links), so the footer mirrors
-// the header. My Orders stays in the header menu / bottom nav only, not duplicated here.
-const FOOTER_NAV = NAV.filter((n) => n.href !== "/orders");
 
 const DEFAULT_POLICIES: Record<string, { title: string; points: string[] }> = {
   privacy_policy: {
@@ -83,16 +78,7 @@ export default function Footer() {
   return (
     <footer className="border-t bg-secondary/40 px-3 pb-24 pt-8 md:pb-8">
       <div className="mx-auto max-w-6xl">
-        {/* Same rounded pill bar look as the header navbar, with all the same nav links. */}
-        <nav aria-label="Footer" className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-card/85 px-3 py-2.5 shadow-sm backdrop-blur-md">
-          {FOOTER_NAV.map((n) => (
-            <a key={n.href} href={n.href} className="rounded-full px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-primary">
-              {n.label}
-            </a>
-          ))}
-        </nav>
-
-        <div className="flex flex-col items-center gap-6 pt-10 text-center md:flex-row md:items-start md:justify-between md:text-left">
+        <div className="flex flex-col items-center gap-6 pt-4 text-center md:flex-row md:items-start md:justify-between md:text-left">
           <div className="flex items-start gap-3">
             <img src={settings.logoUrl} alt={settings.brand} className="mt-1 size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
             <div className="text-left">
