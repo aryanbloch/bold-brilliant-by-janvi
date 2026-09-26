@@ -1,5 +1,4 @@
-// Sign in with Google (one tap) or email magic-link, shown before checkout so every order
-// can be linked to a customer account.
+// Sign in with Google (one tap) or email magic-link. New customers complete their profile right after.
 import { useState } from "react";
 import { Loader2, Mail, MailCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.tsx";
@@ -69,13 +68,12 @@ export default function SignInDialog({ open, onClose }: { open: boolean; onClose
             <MailCheck className="size-14 text-primary" />
             <DialogTitle className="font-serif text-2xl">Check Your Email</DialogTitle>
             <p className="text-sm text-muted-foreground">
-              We've sent a sign-in link to {email}. Open it to continue with your order - no password needed.
+              We've sent a sign-in link to {email}. Open it to sign in - no password needed.
             </p>
           </div>
         ) : (
           <>
-            <DialogTitle className="font-serif text-2xl">Sign In to Continue</DialogTitle>
-            <p className="text-sm text-muted-foreground">Sign in with Google, or with just your email, to place your order and track it later.</p>
+            <DialogTitle className="font-serif text-2xl">Sign In</DialogTitle>
 
             <div className="grid gap-4 pt-2">
               <button

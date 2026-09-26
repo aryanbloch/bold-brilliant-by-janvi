@@ -1,19 +1,19 @@
 import { useState } from "react";
-import { LogOut, Menu, ShoppingBasket, User, X } from "lucide-react";
+import { Menu, ShoppingBasket, User, X } from "lucide-react";
 import { NAV, SITE } from "@/lib/site-config.ts";
 import { cn } from "@/lib/utils.ts";
-import { useCustomerAuth } from "@/hooks/use-customer-auth.ts";
 import { useCart } from "@/hooks/use-cart.tsx";
-import { isSupabaseConfigured } from "@/lib/supabase.ts";
-import SignInDialog from "./sign-in-dialog.tsx";
+import { useProfile } from "@/hooks/use-profile.ts";
 import CartDialog from "./cart-dialog.tsx";
+
+const ICON_BTN = "relative grid size-10 place-items-center rounded-full border border-white/25 bg-white/10 transition-colors hover:bg-white/20";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
-  const [showSignIn, setShowSignIn] = useState(false);
   const [showCart, setShowCart] = useState(false);
-  const { isSignedIn, user, signOut } = useCustomerAuth();
   const { count } = useCart();
+  const { profile, isSignedIn, openProfile } = useProfile();
+  const initial = isSignedIn && profile ? profile.fullName.charAt(0).toUpperCase() : null;
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3">
@@ -32,34 +32,20 @@ export default function Header() {
             </li>
           ))}
         </ul>
-        <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-3 md:flex">
-            {isSupabaseConfigured && (
-              isSignedIn ? (
-                <button onClick={() => void signOut()} title={user?.email ?? undefined} className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20">
-                  <LogOut className="size-3.5" /> Sign Out
-                </button>
-              ) : (
-                <button onClick={() => setShowSignIn(true)} className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20">
-                  <User className="size-3.5" /> Sign In
-                </button>
-              )
-            )}
-            <a href="#booking" className="rounded-full bg-primary px-5 py-2 text-sm text-primary-foreground transition-transform hover:scale-105">
-              Book Now
-            </a>
-          </div>
-          <button
-            aria-label={`Open basket (${count} items)`}
-            onClick={() => setShowCart(true)}
-            className="relative grid size-10 place-items-center rounded-full border border-white/25 bg-white/10 transition-colors hover:bg-white/20"
-          >
+        <div className="flex items-center gap-2.5">
+          <a href="#booking" className="hidden rounded-full bg-primary px-5 py-2 text-sm text-primary-foreground transition-transform hover:scale-105 md:inline-block">
+            Book Now
+          </a>
+          <button aria-label={`Open basket (${count} items)`} onClick={() => setShowCart(true)} className={ICON_BTN}>
             <ShoppingBasket className="size-5" />
             {count > 0 && (
               <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground ring-2 ring-black/30">
                 {count}
               </span>
             )}
+          </button>
+          <button aria-label="My profile" title="My profile" onClick={() => openProfile()} className={cn(ICON_BTN, initial && "border-primary bg-primary hover:bg-primary/90")}>
+            {initial ? <span className="font-serif text-lg font-semibold">{initial}</span> : <User className="size-5" />}
           </button>
           <button aria-label="Menu" className="md:hidden" onClick={() => setOpen(!open)}>
             {open ? <X /> : <Menu />}
@@ -73,35 +59,20 @@ export default function Header() {
               <a href={n.href} onClick={() => setOpen(false)} className="block py-3 text-lg">{n.label}</a>
             </li>
           ))}
-          {isSupabaseConfigured && (
-            <li>
-              {isSignedIn ? (
-                <button
-                  onClick={() => {
-                    void signOut();
-                    setOpen(false);
-                  }}
-                  className="flex items-center gap-2 py-3 text-lg"
-                >
-                  <LogOut className="size-4" /> Sign Out
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setShowSignIn(true);
-                    setOpen(false);
-                  }}
-                  className="flex items-center gap-2 py-3 text-lg"
-                >
-                  <User className="size-4" /> Sign In
-                </button>
-              )}
-            </li>
-          )}
+          <li>
+            <button
+              onClick={() => {
+                openProfile();
+                setOpen(false);
+              }}
+              className="flex items-center gap-2 py-3 text-lg"
+            >
+              <User className="size-4" /> My Profile
+            </button>
+          </li>
         </ul>
       </div>
 
-      <SignInDialog open={showSignIn} onClose={() => setShowSignIn(false)} />
       <CartDialog open={showCart} onClose={() => setShowCart(false)} />
     </header>
   );

@@ -1,29 +1,25 @@
-// Checkout requires the customer to be signed in first, so every paid order can be linked
-// to their account and shown automatically in "My Orders" - no tracking number typing needed.
+// Checkout requires sign in and a completed profile, so every paid order has full delivery and
+// billing details and shows up automatically in "My Orders".
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.tsx";
-import { Input } from "@/components/ui/input.tsx";
-import { Label } from "@/components/ui/label.tsx";
-import { Textarea } from "@/components/ui/textarea.tsx";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { toast } from "sonner";
 import { useCustomerAuth } from "@/hooks/use-customer-auth.ts";
+import { useProfile } from "@/hooks/use-profile.ts";
 import { supabase } from "@/lib/supabase.ts";
+import { formatDeliveryAddress, formatOrderAddress, type ProfileValues } from "@/lib/profile.ts";
 import { loadRazorpayScript, type RazorpayResponse } from "@/lib/razorpay.ts";
 import SignInDialog from "./sign-in-dialog.tsx";
 
 type Product = { name: string; price: number };
 
-type Details = { name: string; phone: string; address: string };
-
-const FIELD = "h-11 rounded-xl bg-background/70";
-
 type Props = { product: Product; onClose: () => void; onSuccess?: () => void };
 
 export default function CheckoutDialog({ product, onClose, onSuccess }: Props) {
   const { user, isSignedIn, loading: authLoading } = useCustomerAuth();
+  const { profile, profileLoading, isProfileOpen, openProfile } = useProfile();
   const [showSignIn, setShowSignIn] = useState(false);
-  const [details, setDetails] = useState<Details>({ name: "", phone: "", address: "" });
   const [step, setStep] = useState<"form" | "paying" | "success">("form");
   const [error, setError] = useState<string | null>(null);
 
@@ -32,16 +28,16 @@ export default function CheckoutDialog({ product, onClose, onSuccess }: Props) {
     if (!authLoading && !isSignedIn) setShowSignIn(true);
   }, [authLoading, isSignedIn]);
 
-  const update = (key: keyof Details) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setDetails((d) => ({ ...d, [key]: e.target.value }));
-
-  const isValid = details.name.trim().length > 1 && /^\+?[0-9\s-]{10,15}$/.test(details.phone.trim()) && details.address.trim().length > 5;
-
   const pay = async () => {
     if (!isSignedIn) {
       setShowSignIn(true);
       return;
     }
+    if (!profile) {
+      openProfile("edit");
+      return;
+    }
+    const details = profile;
     setError(null);
     setStep("paying");
     try {
@@ -64,10 +60,10 @@ export default function CheckoutDialog({ product, onClose, onSuccess }: Props) {
         order_id: order.orderId,
         name: "Bold & Brilliant by Janvi Sarang",
         description: product.name,
-        prefill: { name: details.name, contact: details.phone },
+        prefill: { name: details.fullName, contact: `+91${details.phone}` },
         theme: { color: "#a8285a" },
         handler: (response: RazorpayResponse) => {
-          void verifyAndFinish(response, order.orderId!);
+          void verifyAndFinish(response, order.orderId!, details);
         },
         modal: { ondismiss: () => setStep("form") },
       });
@@ -78,7 +74,7 @@ export default function CheckoutDialog({ product, onClose, onSuccess }: Props) {
     }
   };
 
-  const verifyAndFinish = async (response: RazorpayResponse, orderId: string) => {
+  const verifyAndFinish = async (response: RazorpayResponse, orderId: string, details: ProfileValues) => {
     try {
       const verifyRes = await fetch("/api/verify-payment", {
         method: "POST",
@@ -99,9 +95,9 @@ export default function CheckoutDialog({ product, onClose, onSuccess }: Props) {
           user_id: user.id,
           product_name: product.name,
           amount: product.price,
-          customer_name: details.name,
-          phone: details.phone,
-          address: details.address,
+          customer_name: details.fullName,
+          phone: `+91 ${details.phone}`,
+          address: formatOrderAddress(details),
           razorpay_payment_id: response.razorpay_payment_id,
           razorpay_order_id: orderId,
           status: "Order placed",
@@ -119,7 +115,7 @@ export default function CheckoutDialog({ product, onClose, onSuccess }: Props) {
 
   return (
     <>
-      <Dialog open={!showSignIn} onOpenChange={(o) => !o && onClose()}>
+      <Dialog open={!showSignIn && !isProfileOpen} onOpenChange={(o) => !o && onClose()}>
         <DialogContent className="max-w-md">
           {step === "success" ? (
             <div className="flex flex-col items-center gap-3 py-4 text-center">
@@ -139,22 +135,31 @@ export default function CheckoutDialog({ product, onClose, onSuccess }: Props) {
                 {product.name} · <span className="font-medium text-primary">₹{product.price}</span>
               </p>
               <div className="grid gap-4 pt-2">
-                <div>
-                  <Label htmlFor="co-name" className="pb-2">Full Name</Label>
-                  <Input id="co-name" placeholder="Priya Shah" className={FIELD} value={details.name} onChange={update("name")} />
-                </div>
-                <div>
-                  <Label htmlFor="co-phone" className="pb-2">Phone Number</Label>
-                  <Input id="co-phone" type="tel" inputMode="tel" placeholder="+91 98765 43210" className={FIELD} value={details.phone} onChange={update("phone")} />
-                </div>
-                <div>
-                  <Label htmlFor="co-address" className="pb-2">Delivery Address</Label>
-                  <Textarea id="co-address" rows={3} placeholder="House no, street, city, state, pincode" className="rounded-xl bg-background/70" value={details.address} onChange={update("address")} />
-                </div>
+                {profileLoading ? (
+                  <Skeleton className="h-28 w-full rounded-2xl" />
+                ) : profile ? (
+                  <div className="flex items-start justify-between gap-3 rounded-2xl border bg-card/70 p-4">
+                    <div className="min-w-0 text-sm">
+                      <p className="flex flex-wrap items-center gap-2 font-medium">
+                        <MapPin className="size-4 text-primary" /> Deliver to {profile.fullName}
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-primary">{profile.addressType}</span>
+                      </p>
+                      <p className="break-words pt-1 text-muted-foreground">{formatDeliveryAddress(profile)}</p>
+                      <p className="pt-1 text-muted-foreground">+91 {profile.phone}</p>
+                    </div>
+                    <button onClick={() => openProfile("edit")} className="shrink-0 text-sm font-medium text-primary hover:underline">
+                      Change
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => openProfile("edit")} className="flex h-20 items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/40 text-sm font-medium text-primary transition-colors hover:bg-primary/5">
+                    <Plus className="size-4" /> Add delivery address
+                  </button>
+                )}
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <button
                   onClick={pay}
-                  disabled={!isValid || step === "paying"}
+                  disabled={!profile || step === "paying"}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary font-medium text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
                 >
                   {step === "paying" ? (

@@ -7,8 +7,8 @@ import Reveal, { SectionHeading } from "@/components/reveal.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty.tsx";
 import { useCustomerAuth } from "@/hooks/use-customer-auth.ts";
+import { useProfile } from "@/hooks/use-profile.ts";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase.ts";
-import SignInDialog from "./sign-in-dialog.tsx";
 import ShipmentJourney from "./shipment-journey.tsx";
 
 type Order = {
@@ -22,8 +22,8 @@ type Order = {
 
 export default function MyOrders() {
   const { user, isSignedIn, loading } = useCustomerAuth();
+  const { openProfile } = useProfile();
   const [orders, setOrders] = useState<Order[] | null>(null);
-  const [showSignIn, setShowSignIn] = useState(false);
 
   useEffect(() => {
     if (!supabase || !user) {
@@ -57,7 +57,7 @@ export default function MyOrders() {
                 <EmptyDescription>Sign in with the email you used while ordering to see your order status here.</EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
-                <button onClick={() => setShowSignIn(true)} className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-105">
+                <button onClick={() => openProfile()} className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-105">
                   Sign In
                 </button>
               </EmptyContent>
@@ -100,8 +100,6 @@ export default function MyOrders() {
           )}
         </Reveal>
       </div>
-
-      <SignInDialog open={showSignIn} onClose={() => setShowSignIn(false)} />
     </section>
   );
 }
