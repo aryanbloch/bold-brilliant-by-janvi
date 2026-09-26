@@ -3,11 +3,12 @@ import { useProfile } from "@/hooks/use-profile.ts";
 import { cn } from "@/lib/utils.ts";
 
 // Mobile-only bottom app bar. Hidden on md+ where the top navbar already covers navigation.
+// Shop is a standalone page (/shop); the rest are sections on the home page.
 const ITEMS = [
-  { label: "Home", href: "#top", Icon: Home },
-  { label: "Shop", href: "#shop", Icon: ShoppingBag },
-  { label: "Book", href: "#booking", Icon: CalendarCheck },
-  { label: "Orders", href: "#my-orders", Icon: PackageSearch },
+  { label: "Home", href: "/", Icon: Home },
+  { label: "Shop", href: "/shop", Icon: ShoppingBag },
+  { label: "Book", href: "/#booking", Icon: CalendarCheck },
+  { label: "Orders", href: "/#my-orders", Icon: PackageSearch },
 ] as const;
 
 export default function BottomNav() {
