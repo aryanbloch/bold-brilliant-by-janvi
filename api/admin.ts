@@ -67,9 +67,10 @@ const RESOURCES: Record<string, Resource> = {
     table: "site_settings",
     writable: [
       "brand", "byline", "logo_url", "founder_photo_url", "whatsapp_number", "phone", "email",
-      "instagram_user", "instagram_url", "facebook_url", "youtube_url", "maps_url", "address",
-      "hours", "delivery_note", "hero_video_url", "showcase_video_url", "poster_url", "gstin",
-      "show_whatsapp", "show_instagram", "booking_confirm_message",
+      "instagram_user", "instagram_url", "facebook_url", "youtube_url", "x_url", "telegram_url",
+      "maps_url", "address", "hours", "delivery_note", "hero_video_url", "showcase_video_url",
+      "poster_url", "gstin", "show_whatsapp", "show_instagram", "show_facebook", "show_youtube",
+      "show_x", "show_telegram", "booking_confirm_message",
     ],
     singleton: true,
   },
