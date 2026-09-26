@@ -1,13 +1,18 @@
 import { Brush, Gem, HeartHandshake, ScanEye, ShieldCheck } from "lucide-react";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
 import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
-import { useSiteContent } from "@/hooks/use-site-content.ts";
+import { useSiteContent, useSiteContentList } from "@/hooks/use-site-content.ts";
 
-const CARDS = [
-  { icon: Brush, title: "Creative Designs", text: "Original artwork, trend-led and hand-painted." },
-  { icon: HeartHandshake, title: "Custom Styles", text: "Shapes, shades and details tailored to you." },
-  { icon: Gem, title: "Premium Experience", text: "Quality products in a calm, beautiful studio." },
-  { icon: ScanEye, title: "Attention to Detail", text: "Clean cuticles, precise lines, lasting finish." },
+type WhyCard = { title: string; text: string };
+
+// Icons cycle in this order for admin-added cards; the built-in defaults keep their own icons.
+const CARD_ICONS = [Brush, HeartHandshake, Gem, ScanEye];
+
+const DEFAULT_CARDS: WhyCard[] = [
+  { title: "Creative Designs", text: "Original artwork, trend-led and hand-painted." },
+  { title: "Custom Styles", text: "Shapes, shades and details tailored to you." },
+  { title: "Premium Experience", text: "Quality products in a calm, beautiful studio." },
+  { title: "Attention to Detail", text: "Clean cuticles, precise lines, lasting finish." },
 ];
 
 const DEFAULT_ABOUT =
@@ -17,6 +22,8 @@ export default function About() {
   const settings = useSiteSettings();
   const content = useSiteContent();
   const aboutText = content?.about?.body.trim() || DEFAULT_ABOUT;
+  const cardsFromAdmin = useSiteContentList<WhyCard>(content, "why_choose_us");
+  const cards = cardsFromAdmin?.length ? cardsFromAdmin : DEFAULT_CARDS;
 
   return (
     <section id="about" className="bg-gradient-to-b from-background via-secondary/50 to-background px-5 py-16 md:py-24">
@@ -37,17 +44,20 @@ export default function About() {
 
         <SectionHeading eyebrow="Why choose us" title="Crafted With Intention" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {CARDS.map((c, i) => (
-            <Reveal key={c.title} delay={i * 0.08}>
-              <div className="group h-full rounded-3xl border bg-card/70 p-6 backdrop-blur transition-all duration-500 hover:-translate-y-2 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10">
-                <div className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110">
-                  <c.icon className="size-6" />
+          {cards.map((c, i) => {
+            const Icon = CARD_ICONS[i % CARD_ICONS.length];
+            return (
+              <Reveal key={`${c.title}-${i}`} delay={i * 0.08}>
+                <div className="group h-full rounded-3xl border bg-card/70 p-6 backdrop-blur transition-all duration-500 hover:-translate-y-2 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10">
+                  <div className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110">
+                    <Icon className="size-6" />
+                  </div>
+                  <h3 className="pt-5 font-serif text-2xl">{c.title}</h3>
+                  <p className="pt-2 text-sm text-muted-foreground">{c.text}</p>
                 </div>
-                <h3 className="pt-5 font-serif text-2xl">{c.title}</h3>
-                <p className="pt-2 text-sm text-muted-foreground">{c.text}</p>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>
