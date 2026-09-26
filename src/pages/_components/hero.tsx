@@ -19,7 +19,8 @@ export default function Hero() {
   const ease = [0.22, 1, 0.36, 1] as const;
   return (
     <section id="top" className="relative flex min-h-[100svh] items-center justify-center overflow-hidden bg-[#2a0f1c] text-white">
-      <AmbientVideo src={settings.heroVideoUrl} poster={settings.posterUrl} className="absolute inset-0 h-full w-full object-cover" />
+      {/* Video only - no poster image, so the video appears directly. */}
+      <AmbientVideo src={settings.heroVideoUrl} className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-[#3a0d24]/20 to-[#1a0710]/80" />
       <div className="absolute -left-40 top-1/3 h-96 w-96 rounded-full bg-pink-500/30 blur-[80px]" />
       <div className="absolute -right-40 bottom-10 h-96 w-96 rounded-full bg-amber-400/20 blur-[80px]" />

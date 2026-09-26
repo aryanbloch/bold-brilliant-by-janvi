@@ -26,6 +26,8 @@ export type SiteSettingsValues = {
   showcaseVideoUrl: string;
   posterUrl: string;
   gstin: string;
+  showWhatsapp: boolean;
+  showInstagram: boolean;
 };
 
 const DEFAULTS: SiteSettingsValues = {
@@ -46,8 +48,10 @@ const DEFAULTS: SiteSettingsValues = {
   deliveryNote: SITE.delivery,
   heroVideoUrl: SITE.videos.hero,
   showcaseVideoUrl: SITE.videos.showcase,
-  posterUrl: SITE.poster,
+  posterUrl: "",
   gstin: "",
+  showWhatsapp: true,
+  showInstagram: true,
 };
 
 type Row = {
@@ -70,6 +74,8 @@ type Row = {
   showcase_video_url: string | null;
   poster_url: string | null;
   gstin: string | null;
+  show_whatsapp: boolean | null;
+  show_instagram: boolean | null;
 };
 
 function fromRow(r: Row): SiteSettingsValues {
@@ -89,10 +95,13 @@ function fromRow(r: Row): SiteSettingsValues {
     address: r.address ?? DEFAULTS.address,
     hours: r.hours?.length ? r.hours : DEFAULTS.hours,
     deliveryNote: r.delivery_note ?? DEFAULTS.deliveryNote,
-    heroVideoUrl: r.hero_video_url ?? DEFAULTS.heroVideoUrl,
-    showcaseVideoUrl: r.showcase_video_url ?? DEFAULTS.showcaseVideoUrl,
-    posterUrl: r.poster_url ?? DEFAULTS.posterUrl,
+    heroVideoUrl: r.hero_video_url || DEFAULTS.heroVideoUrl,
+    showcaseVideoUrl: r.showcase_video_url || DEFAULTS.showcaseVideoUrl,
+    // No big poster image over the hero video - the video shows directly.
+    posterUrl: "",
     gstin: r.gstin ?? DEFAULTS.gstin,
+    showWhatsapp: r.show_whatsapp ?? true,
+    showInstagram: r.show_instagram ?? true,
   };
 }
 
