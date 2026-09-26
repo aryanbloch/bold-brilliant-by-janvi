@@ -16,7 +16,7 @@ export default function About() {
         <div className="grid items-center gap-12 pb-14 md:grid-cols-2">
           <Reveal>
             <div className="grid aspect-[8/9] w-full place-items-center overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary/15 via-secondary to-primary/10 shadow-2xl shadow-primary/20">
-              <img src={SITE.logo} alt={SITE.brand} loading="lazy" className="size-[90%] rounded-full object-cover ring-4 ring-white/60" />
+              <img src={SITE.logo} alt={SITE.brand} loading="lazy" className="aspect-square size-[78%] rounded-full object-contain" />
             </div>
           </Reveal>
           <Reveal delay={0.1}>
