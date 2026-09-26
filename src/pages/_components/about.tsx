@@ -15,7 +15,7 @@ export default function About() {
       <div className="mx-auto max-w-6xl">
         <div className="grid items-center gap-12 pb-14 md:grid-cols-2">
           <Reveal>
-            <div className="aspect-[8/9] w-full overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary/15 via-secondary to-primary/10 p-6 shadow-2xl shadow-primary/20">
+            <div className="mx-auto flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary/15 via-secondary to-primary/10 p-8 shadow-2xl shadow-primary/20 sm:max-w-sm">
               <img src={SITE.logo} alt={SITE.brand} loading="lazy" className="h-full w-full object-contain" />
             </div>
           </Reveal>
