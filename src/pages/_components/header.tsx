@@ -33,7 +33,7 @@ export default function Header() {
   return (
     <header ref={menuRef} className="fixed inset-x-0 top-0 z-40 px-3 pt-3">
       <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-border bg-card/85 px-4 py-2 text-foreground shadow-sm backdrop-blur-md">
-        <a href="#top" className="flex items-center gap-2.5">
+        <a href="/" className="flex items-center gap-2.5">
           <img src={settings.logoUrl} alt={settings.brand} className="size-9 rounded-full object-cover ring-1 ring-border" />
           <span className="font-serif text-xl font-semibold leading-none">
             {settings.brand}
@@ -48,7 +48,7 @@ export default function Header() {
           ))}
         </ul>
         <div className="flex items-center gap-2.5">
-          <a href="#booking" className="hidden rounded-full bg-primary px-5 py-2 text-sm text-primary-foreground transition-transform hover:scale-105 md:inline-block">
+          <a href="/#booking" className="hidden rounded-full bg-primary px-5 py-2 text-sm text-primary-foreground transition-transform hover:scale-105 md:inline-block">
             Book Now
           </a>
           <button aria-label={`Open basket (${count} items)`} onClick={() => setShowCart(true)} className={ICON_BTN}>
