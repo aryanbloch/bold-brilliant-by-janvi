@@ -1,7 +1,8 @@
 // Admin endpoint to manage orders: list with search/filter/pagination, dispatch (courier +
 // tracking number), update status, dashboard stats, and CSV export.
+// Dispatch creates the invoice and emails the customer; Delivered/Cancelled also email them.
 // Protected by the shared admin password (x-admin-password header).
-// Env vars (Vercel): ADMIN_PASSWORD, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL.
+// Env vars (Vercel): ADMIN_PASSWORD, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL, RESEND_API_KEY.
 //
 //   GET    /api/admin-orders                       -> { orders, count } (supports ?status=, ?search=, ?limit=, ?offset=)
 //   GET    /api/admin-orders?stats=1                -> dashboard numbers
@@ -9,6 +10,7 @@
 //   PATCH  /api/admin-orders   body: { id, status?, trackingNumber?, courier?, adminNote? }
 // Note: import uses ".js" - Vercel compiles each .ts file to .js, so a ".ts" import crashes at runtime.
 import { checkAdminPassword, dbFetch, getEnv, q, rejectWrongPassword, startOfTodayIstUtc, type ApiRequest, type ApiResponse } from "./_lib/db.js";
+import { getUserEmail, orderVars, sendTemplateEmail, type EmailKey } from "./_lib/email.js";
 
 type Order = {
   id: string;
@@ -146,8 +148,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     try {
       const orderFilter = `orders?id=eq.${encodeURIComponent(body.id)}`;
       // Load the current order so dispatch info is only stamped the first time.
-      const currentRes = await dbFetch(supabaseUrl, serviceKey, `${orderFilter}&select=status,dispatched_at`);
-      const current = currentRes.ok ? ((await currentRes.json()) as { status: string; dispatched_at: string | null }[])[0] : undefined;
+      const currentRes = await dbFetch(supabaseUrl, serviceKey, `${orderFilter}&select=status,dispatched_at,delivered_at`);
+      const current = currentRes.ok
+        ? ((await currentRes.json()) as { status: string; dispatched_at: string | null; delivered_at: string | null }[])[0]
+        : undefined;
       if (!current) {
         res.status(404).json({ error: "Order not found. Please refresh the page." });
         return;
@@ -158,23 +162,48 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       if (body.trackingNumber !== undefined) patch.tracking_number = body.trackingNumber || null;
       if (body.courier !== undefined) patch.courier = body.courier || null;
       if (body.adminNote !== undefined) patch.admin_note = body.adminNote;
-      // Dispatching: the first time a tracking number is set, stamp dispatched_at and move a
-      // not-yet-shipped order to Shipped (unless the admin chose a status). Editing a tracking
-      // number later keeps the original dispatch date and status.
-      if (body.trackingNumber && !current.dispatched_at) {
-        const notYetShipped = current.status === "Order placed" || current.status === "Processing";
-        if (body.status === undefined && notYetShipped) patch.status = "Shipped";
-        if (body.status === undefined || body.status === "Shipped") patch.dispatched_at = new Date().toISOString();
+
+      // Dispatch = first time a tracking number is saved (or status moved to Shipped) on an order
+      // that is not cancelled/delivered. Later edits keep the original dispatch date.
+      const nextStatus = body.status ?? current.status;
+      const firstDispatch =
+        !current.dispatched_at &&
+        nextStatus !== "Cancelled" &&
+        nextStatus !== "Delivered" &&
+        (Boolean(body.trackingNumber) || nextStatus === "Shipped");
+      if (firstDispatch) {
+        if (nextStatus === "Order placed" || nextStatus === "Processing") patch.status = "Shipped";
+        patch.dispatched_at = new Date().toISOString();
       }
+      const finalStatus = (patch.status as string | undefined) ?? current.status;
+      if (finalStatus === "Delivered" && !current.delivered_at) patch.delivered_at = new Date().toISOString();
 
       const r = await dbFetch(supabaseUrl, serviceKey, orderFilter, {
         method: "PATCH",
-        headers: { Prefer: "return=minimal" },
+        headers: { Prefer: "return=representation" },
         body: JSON.stringify(patch),
       });
       if (!r.ok) {
         res.status(502).json({ error: "Could not update order." });
         return;
+      }
+      const updated = ((await r.json()) as (Order & { user_id: string })[])[0];
+
+      if (updated) {
+        if (firstDispatch) {
+          await dbFetch(supabaseUrl, serviceKey, "rpc/create_invoice", { method: "POST", body: JSON.stringify({ p_order_id: updated.id }) });
+        }
+        const emailKey: EmailKey | null = firstDispatch
+          ? "order_dispatched"
+          : finalStatus !== current.status && finalStatus === "Delivered"
+            ? "order_delivered"
+            : finalStatus !== current.status && finalStatus === "Cancelled"
+              ? "order_cancelled"
+              : null;
+        if (emailKey) {
+          const to = await getUserEmail(env, updated.user_id);
+          await sendTemplateEmail(env, emailKey, to, orderVars(updated));
+        }
       }
       res.status(200).json({ ok: true });
     } catch {
