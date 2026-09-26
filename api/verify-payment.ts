@@ -1,11 +1,13 @@
-// Verifies the Razorpay payment signature on the server, then saves the order to Supabase
-// (an "orders" insert trigger auto-creates the invoice). Orders can only be created here, after
-// a real payment, so nobody can add fake "paid" orders. If a coupon was used, also records the
-// redemption (this is what enforces per-user and total usage limits).
+// Verifies the Razorpay payment signature on the server, then saves the order to Supabase.
+// Orders can only be created here, after a real payment, so nobody can add fake "paid" orders.
+// If a coupon was used, also records the redemption (this is what enforces per-user and total
+// usage limits). Then emails the customer ("Order placed") and the owner ("New order").
+// The invoice is created later, when the order is dispatched.
 // Env vars (Vercel): RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, SUPABASE_SERVICE_ROLE_KEY,
-// and SUPABASE_URL (falls back to VITE_SUPABASE_URL).
+// SUPABASE_URL (falls back to VITE_SUPABASE_URL), RESEND_API_KEY (optional).
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { dbFetch, getEnv, getUserId, type ApiRequest, type ApiResponse } from "./_lib/db.js";
+import { getUserEmail, orderVars, sendTemplateEmail } from "./_lib/email.js";
 
 type Profile = {
   full_name: string;
@@ -115,20 +117,23 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const couponCode = order.notes?.coupon || null;
     const subtotal = order.notes?.subtotal ? Number(order.notes.subtotal) : order.amount / 100;
     const discount = order.notes?.discount ? Number(order.notes.discount) : 0;
+    const productName = order.notes?.summary ?? "Nail set order";
+    const amount = order.amount / 100;
+    const phone = `+91 ${profile.phone}`;
 
     const insertRes = await dbFetch(supabaseUrl, serviceKey, "orders", {
       method: "POST",
       headers: { Prefer: "return=representation" },
       body: JSON.stringify({
         user_id: userId,
-        product_name: order.notes?.summary ?? "Nail set order",
-        amount: order.amount / 100,
+        product_name: productName,
+        amount,
         items,
         subtotal,
         discount,
         coupon_code: couponCode,
         customer_name: profile.full_name,
-        phone: `+91 ${profile.phone}`,
+        phone,
         address: formatAddress(profile),
         razorpay_payment_id: paymentId,
         razorpay_order_id: orderId,
@@ -157,6 +162,15 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       } catch {
         // Non-critical: the order itself is already saved and paid.
       }
+    }
+
+    if (savedOrderId) {
+      const vars = orderVars({ id: savedOrderId, customer_name: profile.full_name, phone, product_name: productName, amount });
+      const customerEmail = await getUserEmail(env, userId);
+      await Promise.all([
+        sendTemplateEmail(env, "order_placed", customerEmail, vars),
+        sendTemplateEmail(env, "admin_new_order", null, vars),
+      ]);
     }
 
     res.status(200).json({ verified: true, orderId: savedOrderId });

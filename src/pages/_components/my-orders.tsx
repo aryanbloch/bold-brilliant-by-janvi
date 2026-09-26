@@ -1,8 +1,9 @@
 // Shows the customer's own past orders, their status, live courier shipment journey, and lets
-// them download their invoice - no typing needed. Reads orders directly from Supabase
+// them download their invoice once the order is dispatched. Reads orders directly from Supabase
 // (RLS-protected), then fetches live tracking from /api/track-shipment by order id.
 import { useEffect, useState } from "react";
 import { Download, LogIn, PackageSearch, Truck } from "lucide-react";
+import { toast } from "sonner";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty.tsx";
@@ -17,6 +18,7 @@ type Order = {
   amount: number;
   status: string;
   tracking_number: string | null;
+  dispatched_at: string | null;
   created_at: string;
 };
 
@@ -32,17 +34,31 @@ export default function MyOrders() {
     }
     supabase
       .from("orders")
-      .select("id, product_name, amount, status, tracking_number, created_at")
+      .select("id, product_name, amount, status, tracking_number, dispatched_at, created_at")
       .order("created_at", { ascending: false })
       .then(({ data }) => setOrders((data as Order[] | null) ?? []));
   }, [user]);
 
+  // The sign-in token goes in a header, never in the URL (URLs end up in history and logs).
   const downloadInvoice = async (orderId: string) => {
     if (!supabase) return;
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
     if (!token) return;
-    window.open(`/api/invoice?orderId=${encodeURIComponent(orderId)}&token=${encodeURIComponent(token)}&print=1`, "_blank", "noopener");
+    const tab = window.open("", "_blank");
+    const res = await fetch(`/api/invoice?orderId=${encodeURIComponent(orderId)}&print=1`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
+    if (!res) {
+      tab?.close();
+      toast.error("Could not load the invoice. Please try again.");
+      return;
+    }
+    const html = await res.text();
+    if (!tab) {
+      toast.error("Please allow pop-ups to download the invoice.");
+      return;
+    }
+    tab.document.write(html);
+    tab.document.close();
   };
 
   if (!isSupabaseConfigured) return null;
@@ -101,14 +117,16 @@ export default function MyOrders() {
                       <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
                         <Truck className="size-4" /> {o.status}
                       </div>
-                      <button
-                        onClick={() => void downloadInvoice(o.id)}
-                        title="Download invoice"
-                        aria-label="Download invoice"
-                        className="grid size-9 shrink-0 place-items-center rounded-full border bg-background transition-colors hover:bg-secondary"
-                      >
-                        <Download className="size-4" />
-                      </button>
+                      {o.dispatched_at && (
+                        <button
+                          onClick={() => void downloadInvoice(o.id)}
+                          title="Download invoice"
+                          aria-label="Download invoice"
+                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full border bg-background transition-colors hover:bg-secondary"
+                        >
+                          <Download className="size-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   {o.tracking_number && <ShipmentJourney orderId={o.id} />}
