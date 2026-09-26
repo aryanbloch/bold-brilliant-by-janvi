@@ -4,6 +4,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Loader2, LogOut, Menu, X } from "lucide-react";
 import { toast } from "sonner";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase.ts";
+import { SITE } from "@/lib/site-config.ts";
 import { clearStoredPassword, getStoredPassword, storePassword } from "./_admin/api.ts";
 import DashboardTab from "./_admin/dashboard-tab.tsx";
 import OrdersTab from "./_admin/orders-tab.tsx";
@@ -37,6 +39,29 @@ const GROUPS = [
   { id: "settings", label: "Website Settings" },
 ] as const;
 
+// Studio name + logo for the admin panel chrome (login screen, header). Read directly with the
+// public anon key - site_settings is publicly readable - so it works before the admin signs in.
+function useStudioBranding(): { brand: string; logoUrl: string } {
+  const [brand, setBrand] = useState(SITE.brand);
+  const [logoUrl, setLogoUrl] = useState<string>(SITE.logo);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+    supabase
+      .from("site_settings")
+      .select("brand,logo_url")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        const row = data as { brand?: string; logo_url?: string | null } | null;
+        if (row?.brand) setBrand(row.brand);
+        if (row?.logo_url) setLogoUrl(row.logo_url);
+      });
+  }, []);
+
+  return { brand, logoUrl };
+}
+
 async function checkPassword(password: string): Promise<{ ok: boolean; error?: string }> {
   const res = await fetch("/api/admin-orders?stats=1", { headers: { "x-admin-password": password } });
   if (res.ok) return { ok: true };
@@ -45,6 +70,7 @@ async function checkPassword(password: string): Promise<{ ok: boolean; error?: s
 }
 
 function Login({ onSignedIn }: { onSignedIn: (password: string) => void }) {
+  const { brand, logoUrl } = useStudioBranding();
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,8 +92,11 @@ function Login({ onSignedIn }: { onSignedIn: (password: string) => void }) {
   return (
     <div className="grid min-h-screen place-items-center bg-secondary/40 px-5">
       <form onSubmit={submit} className="w-full max-w-sm rounded-3xl border bg-card p-8 shadow-xl">
-        <h1 className="font-serif text-2xl">Studio Admin</h1>
-        <p className="pt-1 text-sm text-muted-foreground">Enter the admin password to manage your website.</p>
+        <div className="flex items-center gap-3">
+          <img src={logoUrl} alt={brand} className="size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
+          <h1 className="font-serif text-2xl leading-tight">{brand}</h1>
+        </div>
+        <p className="pt-4 text-sm text-muted-foreground">Enter the admin password to manage your website.</p>
         <input
           type="password"
           required
@@ -91,6 +120,7 @@ function Login({ onSignedIn }: { onSignedIn: (password: string) => void }) {
 }
 
 function Dashboard({ password, onSignOut }: { password: string; onSignOut: () => void }) {
+  const { brand, logoUrl } = useStudioBranding();
   const [tab, setTab] = useState<TabId>("dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
   const active = TABS.find((t) => t.id === tab) ?? TABS[0];
@@ -107,8 +137,9 @@ function Dashboard({ password, onSignOut }: { password: string; onSignOut: () =>
         <button onClick={() => setMenuOpen(true)} aria-label="Open menu" className="grid size-10 place-items-center rounded-xl border bg-background hover:bg-muted">
           <Menu className="size-5" />
         </button>
-        <h1 className="font-serif text-xl">Studio Admin</h1>
-        <span className="truncate text-sm text-muted-foreground">/ {active.label}</span>
+        <img src={logoUrl} alt={brand} className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border" />
+        <h1 className="truncate font-serif text-xl">{brand}</h1>
+        <span className="ml-auto shrink-0 text-sm text-muted-foreground">{active.label}</span>
       </header>
 
       {menuOpen && (
