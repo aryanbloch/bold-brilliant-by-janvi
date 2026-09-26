@@ -1,6 +1,6 @@
 // Full studio admin panel: sign in with the admin password, then manage the website from a
 // hamburger menu. Day-to-day work (orders, shop, coupons...) and Website Settings (contact,
-// text, invoice design) are shown as separate groups in the menu.
+// text, invoice design, emails) are shown as separate groups in the menu.
 import { useEffect, useState, type FormEvent } from "react";
 import { Loader2, LogOut, Menu, X } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import ReviewsTab from "./_admin/reviews-tab.tsx";
 import SiteSettingsTab from "./_admin/site-settings-tab.tsx";
 import ContentTab from "./_admin/content-tab.tsx";
 import InvoiceTemplateTab from "./_admin/invoice-template-tab.tsx";
+import EmailsTab from "./_admin/emails-tab.tsx";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard", group: "manage", Component: DashboardTab },
@@ -27,6 +28,7 @@ const TABS = [
   { id: "settings", label: "Contact & Social", group: "settings", Component: SiteSettingsTab },
   { id: "content", label: "Website Text", group: "settings", Component: ContentTab },
   { id: "invoice", label: "Invoice Design", group: "settings", Component: InvoiceTemplateTab },
+  { id: "emails", label: "Emails", group: "settings", Component: EmailsTab },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 

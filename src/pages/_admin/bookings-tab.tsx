@@ -1,9 +1,9 @@
 // Bookings admin tab: appointment requests from the website. Accept a booking, then send the
 // customer a WhatsApp confirmation (opens their chat with the message pre-filled - just tap
-// Send). The confirmation message template is editable at the top of this tab.
+// Send) and/or an email (uses the "Booking accepted/declined" template in Admin > Emails).
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CalendarClock, Check, Save, X } from "lucide-react";
+import { CalendarClock, Check, Mail, Save, X } from "lucide-react";
 import { WhatsappLogo } from "@phosphor-icons/react";
 import { adminApi } from "./api.ts";
 import { AdminButton, AdminCard, EmptyRow, FIELD, LABEL, Spinner } from "./ui.tsx";
@@ -13,6 +13,7 @@ type Booking = {
   booking_number: number;
   name: string;
   phone: string;
+  email: string | null;
   preferred_date: string;
   preferred_time: string;
   service: string;
@@ -74,6 +75,7 @@ function MessageEditor({ password, template, onChange }: { password: string; tem
 export default function BookingsTab({ password }: { password: string }) {
   const [bookings, setBookings] = useState<Booking[] | null>(null);
   const [template, setTemplate] = useState("");
+  const [emailingId, setEmailingId] = useState<string | null>(null);
 
   useEffect(() => {
     void adminApi.list<Booking>(password, "bookings").then(({ ok, data }) => {
@@ -93,12 +95,20 @@ export default function BookingsTab({ password }: { password: string }) {
       return;
     }
     setBookings((prev) => prev?.map((x) => (x.id === b.id ? { ...x, status } : x)) ?? null);
-    toast.success(status === "Confirmed" ? "Booking accepted. Now send the WhatsApp message." : "Booking updated");
+    toast.success(status === "Confirmed" ? "Booking accepted. Now send WhatsApp or email." : "Booking updated");
   };
 
   const sendWhatsapp = (b: Booking) => {
     const url = `https://wa.me/${waNumber(b.phone)}?text=${encodeURIComponent(fillMessage(template, b))}`;
     window.open(url, "_blank", "noopener");
+  };
+
+  const sendEmail = async (b: Booking) => {
+    setEmailingId(b.id);
+    const { ok, data } = await adminApi.emailBooking(password, b.id);
+    setEmailingId(null);
+    if (ok) toast.success(`Email sent to ${b.email}`);
+    else toast.error(data.error ?? "Could not send email");
   };
 
   return (
@@ -119,6 +129,7 @@ export default function BookingsTab({ password }: { password: string }) {
                   <CalendarClock className="mt-1 size-5 shrink-0 text-primary" />
                   <div>
                     <p className="font-medium">#{b.booking_number} · {b.name} · {b.phone}</p>
+                    {b.email && <p className="text-sm text-muted-foreground">{b.email}</p>}
                     <p className="text-sm text-muted-foreground">
                       {b.service} · {formatDate(b.preferred_date)} at {formatTime(b.preferred_time)}
                     </p>
@@ -154,6 +165,11 @@ export default function BookingsTab({ password }: { password: string }) {
                   >
                     <WhatsappLogo size={18} weight="fill" /> Share on WhatsApp
                   </button>
+                )}
+                {(b.status === "Confirmed" || b.status === "Cancelled") && b.email && (
+                  <AdminButton variant="secondary" onClick={() => void sendEmail(b)} disabled={emailingId === b.id}>
+                    {emailingId === b.id ? <Spinner /> : <Mail className="size-4" />} Send Email
+                  </AdminButton>
                 )}
               </div>
             </AdminCard>
