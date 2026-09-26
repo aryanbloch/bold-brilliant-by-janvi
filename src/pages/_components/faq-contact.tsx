@@ -43,27 +43,31 @@ export default function FaqContact() {
         <div className="mx-auto max-w-5xl">
           <SectionHeading eyebrow="Visit us" title="Find Our Studio" />
           <Reveal>
-            <div className="grid gap-6 rounded-[2rem] bg-gradient-to-br from-primary to-[#7a1f4a] p-8 text-primary-foreground shadow-2xl shadow-primary/30 md:grid-cols-2 md:p-12">
+            <div className="grid gap-6 rounded-[2rem] border bg-card p-8 shadow-sm md:grid-cols-2 md:p-12">
               <div className="space-y-6">
                 <div className="flex gap-4">
-                  <MapPin className="mt-1 size-6 shrink-0" />
+                  <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                    <MapPin className="size-6" />
+                  </div>
                   <div>
                     <h3 className="font-serif text-2xl">Studio Location</h3>
-                    <address className="not-italic opacity-85">{settings.address}</address>
+                    <address className="not-italic text-muted-foreground">{settings.address}</address>
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <Clock className="mt-1 size-6 shrink-0" />
+                  <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                    <Clock className="size-6" />
+                  </div>
                   <div>
                     <h3 className="font-serif text-2xl">Opening Hours</h3>
                     {settings.hours.map((h) => (
-                      <p key={h.day} className="opacity-85">{h.day}: {h.time}</p>
+                      <p key={h.day} className="text-muted-foreground">{h.day}: {h.time}</p>
                     ))}
                   </div>
                 </div>
               </div>
               <div className="flex flex-col justify-center gap-4 md:items-end">
-                <a href={settings.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 font-medium text-[#7a1f4a] transition-transform hover:scale-105">
+                <a href={settings.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 font-medium text-primary-foreground transition-transform hover:scale-105">
                   <Navigation className="size-4" /> Open in Google Maps
                 </a>
               </div>
