@@ -7,9 +7,9 @@ export default function Testimonials() {
   return (
     <section id="reviews" className="bg-gradient-to-b from-background via-secondary/40 to-background px-5 py-16 md:py-24">
       <div className="mx-auto max-w-6xl">
-        <SectionHeading eyebrow="Reviews" title="Loved By Our Clients" sub="Swipe through real feedback from clients across Rajkot and beyond." />
+        <SectionHeading eyebrow="Reviews" title="Loved By Our Clients" sub="Real feedback from clients across Rajkot and beyond." />
         <Reveal>
-          <Carousel itemClassName="w-[85%] sm:w-[60%] lg:w-[31%]">
+          <Carousel itemClassName="w-[85%] sm:w-[60%] lg:w-[31%]" autoPlay autoPlayInterval={3500}>
             {REVIEWS.map((r) => (
               <div key={r.name} className="flex h-full flex-col rounded-3xl border bg-card/70 p-6 backdrop-blur">
                 <div className="flex gap-0.5 text-primary">

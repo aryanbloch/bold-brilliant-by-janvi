@@ -38,14 +38,14 @@ export default function FaqContact() {
             <div className="grid gap-6 rounded-[2rem] bg-gradient-to-br from-primary to-[#7a1f4a] p-8 text-primary-foreground shadow-2xl shadow-primary/30 md:grid-cols-2 md:p-12">
               <div className="space-y-6">
                 <div className="flex gap-4">
-                  <MapPin className="size-6 shrink-0" />
+                  <MapPin className="mt-1 size-6 shrink-0" />
                   <div>
                     <h3 className="font-serif text-2xl">Studio Location</h3>
                     <address className="not-italic opacity-85">{SITE.address}</address>
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <Clock className="size-6 shrink-0" />
+                  <Clock className="mt-1 size-6 shrink-0" />
                   <div>
                     <h3 className="font-serif text-2xl">Opening Hours</h3>
                     {SITE.hours.map((h) => (
