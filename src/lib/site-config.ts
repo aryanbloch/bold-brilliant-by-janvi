@@ -29,7 +29,7 @@ export const whatsappLink = (text?: string) =>
 
 export const NAV = [
   { label: "Home", href: "#top" },
-  { label: "Gallery", href: "#gallery" },
+  { label: "Our Work", href: "#work" },
   { label: "Shop", href: "#shop" },
   { label: "About", href: "#about" },
   { label: "Reviews", href: "#reviews" },
