@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Download, PackageSearch, Search, Truck } from "lucide-react";
-import { useDebounce } from "@/hooks/use-debounce.ts";
 import { AdminButton, AdminCard, EmptyRow, FIELD, Spinner } from "./ui.tsx";
 
 type Order = {
@@ -25,6 +24,16 @@ type Order = {
 const STATUSES = ["Order placed", "Processing", "Shipped", "Out for delivery", "Delivered", "Cancelled"];
 const COURIERS = ["Delhivery", "Shiprocket"];
 
+// Small local debounce - avoids sending a search request on every keystroke.
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(timer);
+  }, [value, delayMs]);
+  return debounced;
+}
+
 async function callOrders<T>(password: string, query: string, init?: RequestInit): Promise<{ ok: boolean; data: T }> {
   const res = await fetch(`/api/admin-orders${query}`, {
     ...init,
@@ -37,7 +46,7 @@ export default function OrdersTab({ password }: { password: string }) {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [debouncedSearch] = useDebounce(search, 400);
+  const debouncedSearch = useDebouncedValue(search, 400);
   const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = () => {
@@ -56,8 +65,6 @@ export default function OrdersTab({ password }: { password: string }) {
     const params = new URLSearchParams({ export: "csv" });
     if (statusFilter) params.set("status", statusFilter);
     if (debouncedSearch) params.set("search", debouncedSearch);
-    // A GET download can't send a custom header, so pass the password via basic auth in the URL
-    // isn't safe either - instead open it in a fetch and save as a blob.
     void fetch(`/api/admin-orders?${params.toString()}`, { headers: { "x-admin-password": password } })
       .then(async (res) => {
         if (!res.ok) throw new Error("Could not export orders");
