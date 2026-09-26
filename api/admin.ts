@@ -10,7 +10,7 @@
 //   DELETE /api/admin?resource=products&id=<uuid>
 // Singleton resources (site_settings, invoice_template) ignore id and always target row 1.
 // site_content is keyed by `key` instead of `id` (PATCH body: { key, ...fields }).
-import { checkAdminPassword, dbFetch, getEnv, q, type ApiRequest, type ApiResponse } from "./_lib/db.js";
+import { checkAdminPassword, dbFetch, getEnv, q, rejectWrongPassword, type ApiRequest, type ApiResponse } from "./_lib/db.js";
 
 type Resource = {
   table: string;
@@ -96,7 +96,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return;
   }
   if (!checkAdminPassword(req)) {
-    res.status(401).json({ error: "Incorrect admin password" });
+    await rejectWrongPassword(res);
     return;
   }
   const { supabaseUrl, serviceKey } = env;
