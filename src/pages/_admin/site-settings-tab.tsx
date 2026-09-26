@@ -1,10 +1,10 @@
-// Site contact/branding details admin tab: WhatsApp number, Instagram, address and hours,
-// updated everywhere on the site instantly (src/hooks/use-site-settings.tsx reads this table).
+// Site contact/branding details admin tab: WhatsApp number, Instagram, address and hours, plus
+// on/off switches for the floating WhatsApp / Instagram icons shown to customers.
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { adminApi } from "./api.ts";
-import { AdminButton, AdminCard, FIELD, LABEL, Spinner } from "./ui.tsx";
+import { AdminButton, AdminCard, FIELD, LABEL, Spinner, Toggle } from "./ui.tsx";
 
 type SettingsRow = {
   brand: string;
@@ -21,6 +21,8 @@ type SettingsRow = {
   hours: { day: string; time: string }[] | null;
   delivery_note: string | null;
   gstin: string | null;
+  show_whatsapp: boolean;
+  show_instagram: boolean;
 };
 
 const EMPTY: SettingsRow = {
@@ -38,7 +40,24 @@ const EMPTY: SettingsRow = {
   hours: [],
   delivery_note: "",
   gstin: "",
+  show_whatsapp: true,
+  show_instagram: true,
 };
+
+const TEXT_FIELDS: { key: keyof SettingsRow; label: string; placeholder?: string }[] = [
+  { key: "brand", label: "Brand Name" },
+  { key: "byline", label: "Byline" },
+  { key: "whatsapp_number", label: "WhatsApp Number (with country code, digits only)", placeholder: "919876543210" },
+  { key: "phone", label: "Phone (optional)" },
+  { key: "email", label: "Email (optional)" },
+  { key: "gstin", label: "GSTIN (optional, shown on invoices)" },
+  { key: "instagram_user", label: "Instagram Username" },
+  { key: "instagram_url", label: "Instagram URL" },
+  { key: "facebook_url", label: "Facebook URL (optional)" },
+  { key: "youtube_url", label: "YouTube URL (optional)" },
+  { key: "maps_url", label: "Google Maps Link" },
+  { key: "delivery_note", label: "Delivery Note" },
+];
 
 export default function SiteSettingsTab({ password }: { password: string }) {
   const [form, setForm] = useState<SettingsRow | null>(null);
@@ -46,7 +65,7 @@ export default function SiteSettingsTab({ password }: { password: string }) {
 
   useEffect(() => {
     void adminApi.list<SettingsRow>(password, "site_settings").then(({ ok, data }) => {
-      if (ok) setForm((data as unknown as { row?: SettingsRow }).row ?? EMPTY);
+      if (ok) setForm({ ...EMPTY, ...((data as unknown as { row?: SettingsRow }).row ?? {}) });
       else toast.error(data.error ?? "Could not load site settings");
     });
   }, [password]);
@@ -71,56 +90,26 @@ export default function SiteSettingsTab({ password }: { password: string }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-serif text-2xl">Contact & Site Details</h2>
+      <h2 className="font-serif text-2xl">Contact & Social</h2>
+
+      <AdminCard className="space-y-3">
+        <p className="text-sm font-medium">Floating icons on the website</p>
+        <Toggle checked={form.show_whatsapp} onChange={(v) => setForm({ ...form, show_whatsapp: v })} label={`WhatsApp icon: ${form.show_whatsapp ? "On" : "Off"}`} />
+        <Toggle checked={form.show_instagram} onChange={(v) => setForm({ ...form, show_instagram: v })} label={`Instagram icon: ${form.show_instagram ? "On" : "Off"}`} />
+      </AdminCard>
+
       <AdminCard className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className={LABEL}>Brand Name</label>
-          <input className={FIELD} value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
-        </div>
-        <div>
-          <label className={LABEL}>Byline</label>
-          <input className={FIELD} value={form.byline ?? ""} onChange={(e) => setForm({ ...form, byline: e.target.value })} />
-        </div>
-        <div>
-          <label className={LABEL}>WhatsApp Number (with country code, digits only)</label>
-          <input className={FIELD} value={form.whatsapp_number ?? ""} onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })} placeholder="919876543210" />
-        </div>
-        <div>
-          <label className={LABEL}>Phone (optional)</label>
-          <input className={FIELD} value={form.phone ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-        </div>
-        <div>
-          <label className={LABEL}>Email (optional)</label>
-          <input className={FIELD} value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-        </div>
-        <div>
-          <label className={LABEL}>GSTIN (optional, shown on invoices)</label>
-          <input className={FIELD} value={form.gstin ?? ""} onChange={(e) => setForm({ ...form, gstin: e.target.value })} />
-        </div>
-        <div>
-          <label className={LABEL}>Instagram Username</label>
-          <input className={FIELD} value={form.instagram_user ?? ""} onChange={(e) => setForm({ ...form, instagram_user: e.target.value })} />
-        </div>
-        <div>
-          <label className={LABEL}>Instagram URL</label>
-          <input className={FIELD} value={form.instagram_url ?? ""} onChange={(e) => setForm({ ...form, instagram_url: e.target.value })} />
-        </div>
-        <div>
-          <label className={LABEL}>Facebook URL (optional)</label>
-          <input className={FIELD} value={form.facebook_url ?? ""} onChange={(e) => setForm({ ...form, facebook_url: e.target.value })} />
-        </div>
-        <div>
-          <label className={LABEL}>YouTube URL (optional)</label>
-          <input className={FIELD} value={form.youtube_url ?? ""} onChange={(e) => setForm({ ...form, youtube_url: e.target.value })} />
-        </div>
-        <div>
-          <label className={LABEL}>Google Maps Link</label>
-          <input className={FIELD} value={form.maps_url ?? ""} onChange={(e) => setForm({ ...form, maps_url: e.target.value })} />
-        </div>
-        <div>
-          <label className={LABEL}>Delivery Note</label>
-          <input className={FIELD} value={form.delivery_note ?? ""} onChange={(e) => setForm({ ...form, delivery_note: e.target.value })} />
-        </div>
+        {TEXT_FIELDS.map((f) => (
+          <div key={f.key}>
+            <label className={LABEL}>{f.label}</label>
+            <input
+              className={FIELD}
+              placeholder={f.placeholder}
+              value={String(form[f.key] ?? "")}
+              onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+            />
+          </div>
+        ))}
         <div className="sm:col-span-2">
           <label className={LABEL}>Studio Address</label>
           <textarea className={`${FIELD} h-20 py-2`} value={form.address ?? ""} onChange={(e) => setForm({ ...form, address: e.target.value })} />
