@@ -1,6 +1,7 @@
 import { Brush, Gem, HeartHandshake, ScanEye, ShieldCheck } from "lucide-react";
 import Reveal, { SectionHeading } from "@/components/reveal.tsx";
-import { SITE } from "@/lib/site-config.ts";
+import { useSiteSettings } from "@/hooks/use-site-settings.tsx";
+import { useSiteContent } from "@/hooks/use-site-content.ts";
 
 const CARDS = [
   { icon: Brush, title: "Creative Designs", text: "Original artwork, trend-led and hand-painted." },
@@ -9,21 +10,25 @@ const CARDS = [
   { icon: ScanEye, title: "Attention to Detail", text: "Clean cuticles, precise lines, lasting finish." },
 ];
 
+const DEFAULT_ABOUT =
+  "Bold & Brilliant by Janvi Sarang is a nail studio in Rajkot where nails become wearable art.\n\nFrom minimal elegance to intricate bridal and 3D designs, every set is thoughtfully created around your style, occasion and personality.";
+
 export default function About() {
+  const settings = useSiteSettings();
+  const content = useSiteContent();
+  const aboutText = content?.about?.body.trim() || DEFAULT_ABOUT;
+
   return (
     <section id="about" className="bg-gradient-to-b from-background via-secondary/50 to-background px-5 py-16 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="grid items-center gap-12 pb-14 md:grid-cols-2">
           <Reveal>
-            <img src={SITE.logo} alt={SITE.brand} loading="lazy" className="mx-auto aspect-square w-full max-w-xs rounded-[2rem] object-cover shadow-2xl shadow-primary/20 sm:max-w-sm" />
+            <img src={settings.logoUrl} alt={settings.brand} loading="lazy" className="mx-auto aspect-square w-full max-w-xs rounded-[2rem] object-cover shadow-2xl shadow-primary/20 sm:max-w-sm" />
           </Reveal>
           <Reveal delay={0.1}>
             <p className="pb-3 text-xs font-medium uppercase tracking-[0.3em] text-primary">About me</p>
-            <h2 className="font-serif text-4xl font-semibold md:text-5xl">About Bold & Brilliant</h2>
-            <div className="space-y-4 pt-6 text-muted-foreground">
-              <p>Bold & Brilliant by Janvi Sarang is a nail studio in Rajkot where nails become wearable art.</p>
-              <p>From minimal elegance to intricate bridal and 3D designs, every set is thoughtfully created around your style, occasion and personality.</p>
-            </div>
+            <h2 className="font-serif text-4xl font-semibold md:text-5xl">About {settings.brand}</h2>
+            <div className="space-y-4 whitespace-pre-line pt-6 text-muted-foreground">{aboutText}</div>
             <p className="flex items-center gap-2 pt-6 text-sm font-medium">
               <ShieldCheck className="size-5 text-primary" /> Sterilised tools & strict hygiene for every client
             </p>
